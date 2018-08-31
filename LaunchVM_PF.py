@@ -385,7 +385,7 @@ if __name__ == "__main__":
     # delete_resources(resource_group_client)
     # raw_input('Resources Deallocated. Press enter to continue...')
     #
-    # print "Revel in your success!"
+    print "Revel in your success!"
 
 
 
