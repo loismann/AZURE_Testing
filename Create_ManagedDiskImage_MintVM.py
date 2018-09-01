@@ -6,9 +6,14 @@ from azure.mgmt.compute import ComputeManagementClient
 from azure.mgmt.network import NetworkManagementClient
 from azure.mgmt.compute.models import DiskCreateOption
 
+#Import module necessary for creating a managed disk
+from azure.mgmt.compute.models import DiskCreateOption
+
+
+
 #General Variables
 SUBSCRIPTION_ID = '1153c71f-6990-467b-b1ec-c2ba46824d64'
-GROUP_NAME = 'AutoLaunch_Group'
+GROUP_NAME = 'Sim_VM'
 LOCATION = 'southcentralus'
 VM_NAME = 'AutoLanuchVM'
 ADMIN_NAME = "pferrer"
@@ -307,84 +312,22 @@ if __name__ == "__main__" and Run_Code:
         SUBSCRIPTION_ID
     )
 
-    # # Call the resource group
-    # create_resource_group(resource_group_client)
-    # input("Resource group created. Press enter to continue...")
-    #
-    # # Create the availability set
-    # create_availability_set(compute_client)
-    # print("------------------------------------------------------")
-    # input('Availability set created. Press enter to continue...')
-    #
-    # # Create a public IP address
-    # creation_result = create_public_ip_address(network_client)
-    # print("------------------------------------------------------")
-    # print(creation_result)
-    # input('Public IP address created. Press enter to continue...')
-    #
-    # # Create the virtual network
-    # creation_result = create_vnet(network_client)
-    # print("------------------------------------------------------")
-    # print(creation_result)
-    # input('Virtual Network Created. Press enter to continue...')
-    #
-    # # Add the subnet to the virtual network
-    # creation_result = create_subnet(network_client)
-    # print("------------------------------------------------------")
-    # print(creation_result)
-    # input('Subnet added to virtual network. Press enter to continue...')
-    #
-    # # Create the network interface
-    # creation_result = create_nic(network_client)
-    # print("------------------------------------------------------")
-    # print(creation_result)
-    # input('Network Interface created. Press enter to continue...')
+    # Run code to create managed disk from vhd (this should probably be in a function at some point)
+    disk_creation = compute_client.disks.create_or_update(
+        GROUP_NAME,
+        "mintradianceimagepf",
+        {
+            'location': LOCATION,
+            'creation_data': {
+                'create_option': DiskCreateOption.import_enum,
+                'source_uri': 'https://simvmdisks698.blob.core.windows.net/vhds/mintradiancepf.vhd'
+            }
+        }
+    )
+    disk_resource = disk_creation.result()
 
-    # FINALLY Create the virtual machine
-    # creation_result = create_vm(network_client, compute_client)
-    # print("------------------------------------------------------")
-    # print(creation_result)
-    # input('Virtual Machine Created. Press enter to continue...')
-    #
-    # # Revel in your Success
-    # print "Success!!!"
 
-    # Get information about the VM
-    # get_vm(compute_client)
-    # print("------------------------------------------------------")
-    # input('Info Displayed. Press enter to continue...')
-    #
-    # # Stop the VM
-    # stop_vm(compute_client)
-    # input('VM Stopped. Press enter to continue...')
-    #
-    # Deallocate the VM
-    # deallocate_vm(compute_client)
-    # input('VM Deallocated.  Press enter to continue...')
 
-    # Start the VM back up again
-    # start_vm(compute_client)
-    # input('VM up and running again, Press enter to continue')
-
-    # # Resize the VM
-    # update_result = update_vm(compute_client)
-    # print("------------------------------------------------------")
-    # print(update_result)
-    # input('VM has been resized. Press enter to continue...')
-    #
-    # # Add Data Disk to VM
-    # add_result = add_datadisk(compute_client)
-    # print("------------------------------------------------------")
-    # print(add_result)
-    # input('Press enter to continue...')
-
-    # # Deallocate the VM
-    # deallocate_vm(compute_client)
-    # input('VM Deallocated.  Press enter to continue...')
-
-    # Delete all resources
-    delete_resources(resource_group_client)
-    input('Resources Deleted. Press enter to continue...')
     #
     print ("Revel in your success!")
 else:
