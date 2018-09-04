@@ -170,6 +170,48 @@ def create_vm(network_client, compute_client):
 
     return creation_result.result()
 
+# This will create a CUSTOM virtual machine
+def create_customvm(network_client, compute_client):
+    nic = network_client.network_interfaces.get(
+        GROUP_NAME,
+        'myNic'
+    )
+    avset = compute_client.availability_sets.get(
+        GROUP_NAME,
+        'myAVSet'
+    )
+    vm_parameters = {
+        'location': LOCATION,
+        'os_profile': {
+            'computer_name': VM_NAME,
+            'admin_username': ADMIN_NAME,
+            'admin_password': ADMIN_PSWD
+        },
+        'hardware_profile': {
+            'vm_size': 'Standard_DS1'
+        },
+        'storage_profile': {
+            'image_reference': {
+                'id' : '/subscriptions/1153c71f-6990-467b-b1ec-c2ba46824d64/resourceGroups/AutoLaunch_Group/providers/Microsoft.Compute/images/https://virtualimagespf.blob.core.windows.net/vm-image'
+            }
+        },
+        'network_profile': {
+            'network_interfaces': [{
+                'id': nic.id
+            }]
+        },
+        'availability_set': {
+            'id': avset.id
+        }
+    }
+    creation_result = compute_client.virtual_machines.create_or_update(
+        GROUP_NAME,
+        VM_NAME,
+        vm_parameters
+    )
+
+    return creation_result.result()
+
 # This will give information about the current VM
 def get_vm(compute_client):
     vm = compute_client.virtual_machines.get(GROUP_NAME, VM_NAME, expand='instanceView')
@@ -311,40 +353,40 @@ if __name__ == "__main__" and Run_Code:
     # create_resource_group(resource_group_client)
     # input("Resource group created. Press enter to continue...")
     #
-    # # Create the availability set
+    # Create the availability set
     # create_availability_set(compute_client)
     # print("------------------------------------------------------")
     # input('Availability set created. Press enter to continue...')
-    #
-    # # Create a public IP address
+    # #
+    # Create a public IP address
     # creation_result = create_public_ip_address(network_client)
     # print("------------------------------------------------------")
     # print(creation_result)
     # input('Public IP address created. Press enter to continue...')
-    #
+
     # # Create the virtual network
     # creation_result = create_vnet(network_client)
     # print("------------------------------------------------------")
     # print(creation_result)
     # input('Virtual Network Created. Press enter to continue...')
-    #
-    # # Add the subnet to the virtual network
+    # #
+    # Add the subnet to the virtual network
     # creation_result = create_subnet(network_client)
     # print("------------------------------------------------------")
     # print(creation_result)
     # input('Subnet added to virtual network. Press enter to continue...')
     #
-    # # Create the network interface
+    # Create the network interface
     # creation_result = create_nic(network_client)
     # print("------------------------------------------------------")
     # print(creation_result)
     # input('Network Interface created. Press enter to continue...')
 
     # FINALLY Create the virtual machine
-    # creation_result = create_vm(network_client, compute_client)
-    # print("------------------------------------------------------")
-    # print(creation_result)
-    # input('Virtual Machine Created. Press enter to continue...')
+    creation_result = create_customvm(network_client, compute_client)
+    print("------------------------------------------------------")
+    print(creation_result)
+    input('Virtual Machine Created. Press enter to continue...')
     #
     # # Revel in your Success
     # print "Success!!!"
@@ -383,8 +425,8 @@ if __name__ == "__main__" and Run_Code:
     # input('VM Deallocated.  Press enter to continue...')
 
     # Delete all resources
-    delete_resources(resource_group_client)
-    input('Resources Deleted. Press enter to continue...')
+    # delete_resources(resource_group_client)
+    # input('Resources Deleted. Press enter to continue...')
     #
     print ("Revel in your success!")
 else:
