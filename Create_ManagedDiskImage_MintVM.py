@@ -13,7 +13,7 @@ from azure.mgmt.compute.models import DiskCreateOption
 
 #General Variables
 SUBSCRIPTION_ID = '1153c71f-6990-467b-b1ec-c2ba46824d64'
-GROUP_NAME = 'Sim_VM'
+GROUP_NAME = 'pfubuntu'
 LOCATION = 'southcentralus'
 VM_NAME = 'AutoLanuchVM'
 ADMIN_NAME = "pferrer"
@@ -313,18 +313,28 @@ if __name__ == "__main__" and Run_Code:
     )
 
     # Run code to create managed disk from vhd (this should probably be in a function at some point)
-    disk_creation = compute_client.disks.create_or_update(
-        GROUP_NAME,
-        "mintradianceimagepf",
-        {
-            'location': LOCATION,
-            'creation_data': {
-                'create_option': DiskCreateOption.import_enum,
-                'source_uri': 'https://simvmdisks698.blob.core.windows.net/vhds/mintradiancepf.vhd'
+    disk_creation = compute_client.images.create_or_update(
+            GROUP_NAME,
+            "scriptedUbuntuimagepf",
+            {
+                'location': LOCATION,
+                'storage_profile': {
+                    'os_disk': {
+                        'os_type': 'Linux',
+                        'os_state': "Generalized",
+                        'blob_uri': 'https://pfubuntustorage.blob.core.windows.net/vhdfilesforimages/Ubuntu.vhd',
+                        'caching': "ReadWrite",
+                    }
+                }
             }
-        }
-    )
+        )
     disk_resource = disk_creation.result()
+
+
+
+
+
+
 
 
 

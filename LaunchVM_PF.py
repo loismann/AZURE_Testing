@@ -8,9 +8,9 @@ from azure.mgmt.compute.models import DiskCreateOption
 
 #General Variables
 SUBSCRIPTION_ID = '1153c71f-6990-467b-b1ec-c2ba46824d64'
-GROUP_NAME = 'AutoLaunch_Group'
+GROUP_NAME = 'pfubuntu'
 LOCATION = 'southcentralus'
-VM_NAME = 'AutoLanuchVM'
+VM_NAME = 'AutoBuntu'
 ADMIN_NAME = "pferrer"
 ADMIN_PSWD = "Password_001"
 
@@ -192,7 +192,7 @@ def create_customvm(network_client, compute_client):
         },
         'storage_profile': {
             'image_reference': {
-                'id' : '/subscriptions/1153c71f-6990-467b-b1ec-c2ba46824d64/resourceGroups/AutoLaunch_Group/providers/Microsoft.Compute/images/https://virtualimagespf.blob.core.windows.net/vm-image'
+                'id' : '/subscriptions/1153c71f-6990-467b-b1ec-c2ba46824d64/resourceGroups/VM_Images_PF/providers/Microsoft.Compute/images/mintradianceimagepf'
             }
         },
         'network_profile': {
@@ -349,85 +349,85 @@ if __name__ == "__main__" and Run_Code:
         SUBSCRIPTION_ID
     )
 
-    # # Call the resource group
-    # create_resource_group(resource_group_client)
-    # input("Resource group created. Press enter to continue...")
-    #
+    # Call the resource group
+    create_resource_group(resource_group_client)
+    input("Resource group created. Press enter to continue...")
+
     # Create the availability set
-    # create_availability_set(compute_client)
-    # print("------------------------------------------------------")
-    # input('Availability set created. Press enter to continue...')
-    # #
+    create_availability_set(compute_client)
+    print("------------------------------------------------------")
+    input('Availability set created. Press enter to continue...')
+
     # Create a public IP address
-    # creation_result = create_public_ip_address(network_client)
-    # print("------------------------------------------------------")
-    # print(creation_result)
-    # input('Public IP address created. Press enter to continue...')
-
-    # # Create the virtual network
-    # creation_result = create_vnet(network_client)
-    # print("------------------------------------------------------")
-    # print(creation_result)
-    # input('Virtual Network Created. Press enter to continue...')
-    # #
-    # Add the subnet to the virtual network
-    # creation_result = create_subnet(network_client)
-    # print("------------------------------------------------------")
-    # print(creation_result)
-    # input('Subnet added to virtual network. Press enter to continue...')
-    #
-    # Create the network interface
-    # creation_result = create_nic(network_client)
-    # print("------------------------------------------------------")
-    # print(creation_result)
-    # input('Network Interface created. Press enter to continue...')
-
-    # FINALLY Create the virtual machine
-    creation_result = create_customvm(network_client, compute_client)
+    creation_result = create_public_ip_address(network_client)
     print("------------------------------------------------------")
     print(creation_result)
-    input('Virtual Machine Created. Press enter to continue...')
-    #
-    # # Revel in your Success
+    input('Public IP address created. Press enter to continue...')
+
+    # Create the virtual network
+    creation_result = create_vnet(network_client)
+    print("------------------------------------------------------")
+    print(creation_result)
+    input('Virtual Network Created. Press enter to continue...')
+
+    # Add the subnet to the virtual network
+    creation_result = create_subnet(network_client)
+    print("------------------------------------------------------")
+    print(creation_result)
+    input('Subnet added to virtual network. Press enter to continue...')
+
+    # Create the network interface
+    creation_result = create_nic(network_client)
+    print("------------------------------------------------------")
+    print(creation_result)
+    input('Network Interface created. Press enter to continue...')
+
+    ## FINALLY Create the virtual machine
+    # creation_result = create_customvm(network_client, compute_client)
+    # print("------------------------------------------------------")
+    # print(creation_result)
+    # input('Virtual Machine Created. Press enter to continue...')
+
+    ## Revel in your Success
     # print "Success!!!"
 
-    # Get information about the VM
+    ## Get information about the VM
     # get_vm(compute_client)
     # print("------------------------------------------------------")
     # input('Info Displayed. Press enter to continue...')
-    #
-    # # Stop the VM
+
+    ## Stop the VM
     # stop_vm(compute_client)
     # input('VM Stopped. Press enter to continue...')
-    #
+
     # Deallocate the VM
     # deallocate_vm(compute_client)
     # input('VM Deallocated.  Press enter to continue...')
 
-    # Start the VM back up again
+    ## Start the VM back up again
     # start_vm(compute_client)
     # input('VM up and running again, Press enter to continue')
 
-    # # Resize the VM
+    ## Resize the VM
     # update_result = update_vm(compute_client)
     # print("------------------------------------------------------")
     # print(update_result)
     # input('VM has been resized. Press enter to continue...')
-    #
-    # # Add Data Disk to VM
+
+    ## Add Data Disk to VM
     # add_result = add_datadisk(compute_client)
     # print("------------------------------------------------------")
     # print(add_result)
     # input('Press enter to continue...')
 
-    # # Deallocate the VM
+    ## Deallocate the VM
     # deallocate_vm(compute_client)
     # input('VM Deallocated.  Press enter to continue...')
 
-    # Delete all resources
+    ## Delete all resources
     # delete_resources(resource_group_client)
     # input('Resources Deleted. Press enter to continue...')
-    #
+
     print ("Revel in your success!")
 else:
     print ("Just testing stuff")
