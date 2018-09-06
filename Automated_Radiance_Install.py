@@ -1,6 +1,6 @@
 from paramiko import client
 
-# Remote Machine Information
+# Remote Machine Information Change as necessary
 Server_Address = "40.74.229.97"
 Username = "pferrer"
 Password = "Password_001"
