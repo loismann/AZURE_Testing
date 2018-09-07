@@ -49,16 +49,39 @@ class ssh:
 
 
 # Run Code
-# List Credentials
+# machine = "local"
+# if machine == "local":
+#     # PF Gmail Initial Cloud machine Credentials
+#     sshUsername = "pferrer"
+#     sshPassword = "Password_001"
+#     sshServer = "127.0.0.1"
+# elif machine == "GmailAzureCloud":
+#     # PF Local Ubuntu Credentials
+#     sshUsername = "pferrer"
+#     sshPassword = "Password_001"
+#     sshServer = "40.74.229.97"
+
 sshUsername = "pferrer"
 sshPassword = "Password_001"
-sshServer = "40.74.229.97"
+sshServer = "127.0.0.1"
 
-# Initialize connection
+# Initialize connection (OPENSSH MUST ALREADY BE INSTALLED ON LINUX COMPUTER)
 connection = ssh(sshServer,sshUsername,sshPassword)
 connection.openShell()
 
-#install radiance
+
+# print("Connection Established")
+
+#install radiance:
+#Update Linux
+# connection.sendShell("sudo apt-get update")
+# connection.sendShell("Password_001")
+# connection.sendShell("sudo apt-get install csh tcsh libtiff5 g++ g++4.1 tcl8.5 tk libc6-dev libx11-dev")
+# connection.sendShell("sudo apt-get update")
+# # connection.sendShell("wget https://www.radiance-online.org/software/snapshots/radiance-HEAD.tgz")
+# connection.openShell()
+# connection.sendShell("mkdir testfolder")
+
 
 
 # or, if you like, send commands via the terminal.  Command must start with a " " (space)
