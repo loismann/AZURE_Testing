@@ -183,7 +183,7 @@ def create_customvm(network_client, compute_client, Instance):
     vm_parameters = {
         'location': LOCATION,
         'os_profile': {
-            'computer_name': VM_NAME + "_" + str(Instance),
+            'computer_name': VM_NAME + "-" + str(Instance),
             'admin_username': ADMIN_NAME + "_" + str(Instance),
             'admin_password': ADMIN_PSWD
         },
@@ -206,7 +206,7 @@ def create_customvm(network_client, compute_client, Instance):
     }
     creation_result = compute_client.virtual_machines.create_or_update(
         GROUP_NAME,
-        VM_NAME + "_" + str(Instance),
+        VM_NAME + "-" + str(Instance),
         vm_parameters
     )
 
@@ -325,7 +325,7 @@ def delete_resources(resource_group_client):
 
 ########################################### RUN VIRTUAL MACHINE CODE ###################################################
 
-Run_Code = False
+Run_Code = True
 
 
 #Run Code
