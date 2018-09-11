@@ -47,22 +47,22 @@ def create_availability_set(compute_client):
         avset_params
     )
 
-# This creates a public IP address
-def create_public_ip_address(network_client):
+# This creates MULTIPLE public IP addresses
+def create_public_ip_address(network_client,Instance):
     public_ip_addess_params = {
         'location': LOCATION,
         'public_ip_allocation_method': 'Dynamic'
     }
     creation_result = network_client.public_ip_addresses.create_or_update(
         GROUP_NAME,
-        'myIPAddress',
+        'myIPAddress' + "_" + str(Instance),
         public_ip_addess_params
     )
 
     return creation_result.result()
 
 # This creates a virtual network
-def create_vnet(network_client):
+def create_vnet(network_client,Instance):
     vnet_params = {
         'location': LOCATION,
         'address_space': {
@@ -71,35 +71,35 @@ def create_vnet(network_client):
     }
     creation_result = network_client.virtual_networks.create_or_update(
         GROUP_NAME,
-        'myVNet',
+        'myVNet' + "_" + str(Instance),
         vnet_params
     )
     return creation_result.result()
 
 # This adds the subnet to the virtual network
-def create_subnet(network_client):
+def create_subnet(network_client,Instance):
     subnet_params = {
         'address_prefix': '10.0.0.0/24'
     }
     creation_result = network_client.subnets.create_or_update(
         GROUP_NAME,
-        'myVNet',
-        'mySubnet',
+        'myVNet' + "_" + str(Instance),
+        'mySubnet' + "_" + str(Instance),
         subnet_params
     )
 
     return creation_result.result()
 
 # This creates a network interface for the virtual network
-def create_nic(network_client):
+def create_nic(network_client,Instance):
     subnet_info = network_client.subnets.get(
         GROUP_NAME,
-        'myVNet',
-        'mySubnet'
+        'myVNet' + "_" + str(Instance),
+        'mySubnet' + "_" + str(Instance),
     )
     publicIPAddress = network_client.public_ip_addresses.get(
         GROUP_NAME,
-        'myIPAddress'
+        'myIPAddress' + "_" + str(Instance)
     )
     nic_params = {
         'location': LOCATION,
@@ -113,7 +113,7 @@ def create_nic(network_client):
     }
     creation_result = network_client.network_interfaces.create_or_update(
         GROUP_NAME,
-        'myNic',
+        'myNic' + "_" + str(Instance),
         nic_params
     )
 
@@ -171,10 +171,10 @@ def create_vm(network_client, compute_client):
     return creation_result.result()
 
 # This will create a CUSTOM virtual machine
-def create_customvm(network_client, compute_client):
+def create_customvm(network_client, compute_client, Instance):
     nic = network_client.network_interfaces.get(
         GROUP_NAME,
-        'myNic'
+        'myNic' + "_" + str(Instance)
     )
     avset = compute_client.availability_sets.get(
         GROUP_NAME,
@@ -183,8 +183,8 @@ def create_customvm(network_client, compute_client):
     vm_parameters = {
         'location': LOCATION,
         'os_profile': {
-            'computer_name': VM_NAME,
-            'admin_username': ADMIN_NAME,
+            'computer_name': VM_NAME + "_" + str(Instance),
+            'admin_username': ADMIN_NAME + "_" + str(Instance),
             'admin_password': ADMIN_PSWD
         },
         'hardware_profile': {
@@ -192,7 +192,7 @@ def create_customvm(network_client, compute_client):
         },
         'storage_profile': {
             'image_reference': {
-                'id' : '/subscriptions/1153c71f-6990-467b-b1ec-c2ba46824d64/resourceGroups/VM_Images_PF/providers/Microsoft.Compute/images/mintradianceimagepf'
+                'id' : '/subscriptions/1153c71f-6990-467b-b1ec-c2ba46824d64/resourceGroups/Ubuntu_Radiance_LINE/providers/Microsoft.Compute/images/RadianceTemplate_LINE'
             }
         },
         'network_profile': {
@@ -206,7 +206,7 @@ def create_customvm(network_client, compute_client):
     }
     creation_result = compute_client.virtual_machines.create_or_update(
         GROUP_NAME,
-        VM_NAME,
+        VM_NAME + "_" + str(Instance),
         vm_parameters
     )
 
@@ -325,7 +325,7 @@ def delete_resources(resource_group_client):
 
 ########################################### RUN VIRTUAL MACHINE CODE ###################################################
 
-Run_Code = True
+Run_Code = False
 
 
 #Run Code
@@ -349,8 +349,10 @@ if __name__ == "__main__" and Run_Code:
         SUBSCRIPTION_ID
     )
 
-    # Call the resource group
-    create_resource_group(resource_group_client)
+    num_vm = 2
+
+    # # Call the resource group
+    # create_resource_group(resource_group_client)
     input("Resource group created. Press enter to continue...")
 
     # # Create the availability set
@@ -358,24 +360,43 @@ if __name__ == "__main__" and Run_Code:
     print("------------------------------------------------------")
     input('Availability set created. Press enter to continue...')
 
+    # Create Everything in a Loop
+
+    for i in range(num_vm):
+        print("Creating Instance " + str(i))
+        # Create a public IP address
+        creation_result = create_public_ip_address(network_client, i)
+        print("IP Address Created")
+        # Create virtual network
+        creation_result = create_vnet(network_client,i)
+        print("Virtual Network Created")
+        # Create Subnet
+        creation_result = create_subnet(network_client,i)
+        print("Subnet Created")
+        # Create Network Interface
+        creation_result = create_nic(network_client,i)
+        print("Network Interface Created")
+        # Create Custom VM
+        creation_result = create_customvm(network_client, compute_client,i)
+
     # # Create a public IP address
-    creation_result = create_public_ip_address(network_client)
-    print("------------------------------------------------------")
-    print(creation_result)
-    input('Public IP address created. Press enter to continue...')
+    # creation_result = create_public_ip_address(network_client,10)
+    # print("------------------------------------------------------")
+    # print(creation_result)
+    # input('Public IP address created. Press enter to continue...')
 
     # # Create the virtual network
     # creation_result = create_vnet(network_client)
     # print("------------------------------------------------------")
     # print(creation_result)
     # input('Virtual Network Created. Press enter to continue...')
-
+    #
     # # Add the subnet to the virtual network
     # creation_result = create_subnet(network_client)
     # print("------------------------------------------------------")
     # print(creation_result)
     # input('Subnet added to virtual network. Press enter to continue...')
-
+    #
     # # Create the network interface
     # creation_result = create_nic(network_client)
     # print("------------------------------------------------------")
@@ -388,8 +409,8 @@ if __name__ == "__main__" and Run_Code:
     # print(creation_result)
     # input('Virtual Machine Created. Press enter to continue...')
 
-    ## Revel in your Success
-    # print "Success!!!"
+    # Revel in your Success
+    # print ("Success!!!")
 
     ## Get information about the VM
     # get_vm(compute_client)

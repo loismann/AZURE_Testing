@@ -59,4 +59,12 @@ connection.openShell()
 #         command = command[1:]
 #     connection.sendShell(command)
 
+
 connection.sendShell("mkdir testfolder")
+connection.sendShell("mkdir testfolder")
+connection.sendShell("mkdir testfolder")
+connection.sendShell("mkdir testfolder")
+
+
+
+

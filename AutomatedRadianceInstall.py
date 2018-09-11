@@ -16,6 +16,21 @@ class ssh:
         thread.daemon = True
         thread.start()
 
+    def sendCommand(self, command):
+        if (self.client):
+            stdin, stdout, stderr = self.client.exec_command(command)
+            while not stdout.channel.exit_status_ready():
+                # Print data when available
+                if stdout.channel.recv_ready():
+                    alldata = stdout.channel.recv(1024)
+                    prevdata = b"1"
+                    while prevdata:
+                        prevdata = stdout.channel.recv(1024)
+                        alldata += prevdata
+
+                    print(str(alldata, "utf8"))
+        else:
+            print("Connection not opened.")
 
     def closeConnection(self):
         if(self.client != None):
@@ -74,7 +89,10 @@ connection.openShell()
 
 #install radiance:
 #Update Linux
-# connection.sendShell("sudo apt-get update")
+connection.sendCommand("mkdir testfolder")
+connection.sendCommand("mkdir testfolder2")
+connection.sendCommand("wget https://www.radiance-online.org/software/snapshots/radiance-HEAD.tgz")
+# connection.sendCommand("sudo apt-get update")
 # connection.sendShell("Password_001")
 # connection.sendShell("sudo apt-get install csh tcsh libtiff5 g++ g++4.1 tcl8.5 tk libc6-dev libx11-dev")
 # connection.sendShell("sudo apt-get update")
@@ -85,8 +103,8 @@ connection.openShell()
 
 
 # or, if you like, send commands via the terminal.  Command must start with a " " (space)
-while True:
-    command = input("$ ")
-    if command.startswith(""):
-        command = command[1:]
-    connection.sendShell(command)
+# while True:
+#     command = input("$ ")
+#     if command.startswith(""):
+#         command = command[1:]
+#     connection.sendShell(command)
