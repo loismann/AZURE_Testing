@@ -1,10 +1,10 @@
 
 
-from azure.common.credentials import ServicePrincipalCredentials
+from azure.common.credentialsimport ServicePrincipalCredentials
 from azure.mgmt.resource import ResourceManagementClient
-from azure.mgmt.compute import ComputeManagementClient
-from azure.mgmt.network import NetworkManagementClient
-from azure.mgmt.compute.models import DiskCreateOption
+from azure.mgmt.computeimport ComputeManagementClient
+from azure.mgmt.networkimport NetworkManagementClient
+from azure.mgmt.compute.modelsimport DiskCreateOption
 
 #General Variables
 SUBSCRIPTION_ID = '1153c71f-6990-467b-b1ec-c2ba46824d64'
@@ -35,7 +35,7 @@ def create_resource_group(resource_group_client):
     )
 
 # This creates an availability set (look more into what these do)
-def create_availability_set(compute_client):
+def create_availability_set(compute_client,Instance):
     avset_params = {
         'location': LOCATION,
         'sku': { 'name': 'Aligned' },
@@ -43,7 +43,7 @@ def create_availability_set(compute_client):
     }
     availability_set_result = compute_client.availability_sets.create_or_update(
         GROUP_NAME,
-        'myAVSet',
+        'myAVSet' + "_" + str(Instance),
         avset_params
     )
 
@@ -178,13 +178,13 @@ def create_customvm(network_client, compute_client, Instance):
     )
     avset = compute_client.availability_sets.get(
         GROUP_NAME,
-        'myAVSet'
+        'myAVSet' + "_" + str(Instance)
     )
     vm_parameters = {
         'location': LOCATION,
         'os_profile': {
             'computer_name': VM_NAME + "-" + str(Instance),
-            'admin_username': ADMIN_NAME + "_" + str(Instance),
+            'admin_username': ADMIN_NAME,
             'admin_password': ADMIN_PSWD
         },
         'hardware_profile': {
@@ -353,17 +353,20 @@ if __name__ == "__main__" and Run_Code:
 
     # # Call the resource group
     # create_resource_group(resource_group_client)
-    input("Resource group created. Press enter to continue...")
+    # input("Resource group created. Press enter to continue...")
 
     # # Create the availability set
-    create_availability_set(compute_client)
-    print("------------------------------------------------------")
-    input('Availability set created. Press enter to continue...')
+    # create_availability_set(compute_client)
+    # print("------------------------------------------------------")
+    # input('Availability set created. Press enter to continue...')
 
     # Create Everything in a Loop
 
     for i in range(num_vm):
         print("Creating Instance " + str(i))
+        # Create an Availability Set
+        creation_result = create_availability_set(compute_client, i)
+        print("Availability Set Created")
         # Create a public IP address
         creation_result = create_public_ip_address(network_client, i)
         print("IP Address Created")
@@ -452,6 +455,7 @@ if __name__ == "__main__" and Run_Code:
     print ("Revel in your success!")
 else:
     print ("Just testing stuff")
+
 
 
 
