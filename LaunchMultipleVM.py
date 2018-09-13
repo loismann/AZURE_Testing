@@ -1,10 +1,10 @@
 
 
-from azure.common.credentialsimport ServicePrincipalCredentials
+from azure.common.credentials import ServicePrincipalCredentials
 from azure.mgmt.resource import ResourceManagementClient
-from azure.mgmt.computeimport ComputeManagementClient
-from azure.mgmt.networkimport NetworkManagementClient
-from azure.mgmt.compute.modelsimport DiskCreateOption
+from azure.mgmt.compute import ComputeManagementClient
+from azure.mgmt.network import NetworkManagementClient
+from azure.mgmt.compute.models import DiskCreateOption
 
 #General Variables
 SUBSCRIPTION_ID = '1153c71f-6990-467b-b1ec-c2ba46824d64'
@@ -74,6 +74,7 @@ def create_vnet(network_client,Instance):
         'myVNet' + "_" + str(Instance),
         vnet_params
     )
+    creation_result.wait()
     return creation_result.result()
 
 # This adds the subnet to the virtual network
@@ -209,7 +210,7 @@ def create_customvm(network_client, compute_client, Instance):
         VM_NAME + "-" + str(Instance),
         vm_parameters
     )
-
+    creation_result.wait()
     return creation_result.result()
 
 # This will give information about the current VM
@@ -349,7 +350,7 @@ if __name__ == "__main__" and Run_Code:
         SUBSCRIPTION_ID
     )
 
-    num_vm = 2
+    VM_Count = 3
 
     # # Call the resource group
     # create_resource_group(resource_group_client)
@@ -362,7 +363,7 @@ if __name__ == "__main__" and Run_Code:
 
     # Create Everything in a Loop
 
-    for i in range(num_vm):
+    for i in range(VM_Count):
         print("Creating Instance " + str(i))
         # Create an Availability Set
         creation_result = create_availability_set(compute_client, i)
@@ -381,6 +382,8 @@ if __name__ == "__main__" and Run_Code:
         print("Network Interface Created")
         # Create Custom VM
         creation_result = create_customvm(network_client, compute_client,i)
+        print("VM Created")
+        print("-----------------------------------------------------------")
 
     # # Create a public IP address
     # creation_result = create_public_ip_address(network_client,10)
