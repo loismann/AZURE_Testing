@@ -1,4 +1,5 @@
 import scriptcontext as sc
+import time
 
 # These are the original import statements that will not be needed in grasshopper
 # from azure.common.credentials import ServicePrincipalCredentials
@@ -15,8 +16,10 @@ VM_NAME = 'AutoBuntu'
 ADMIN_NAME = "pferrer"
 ADMIN_PSWD = "Password_001"
 
-############################################### SUPPORTING RESOURCE SETUP ###############################################
 
+#
+############################################### SUPPORTING RESOURCE SETUP ###############################################
+#
 # This gets all Active Directory credentials
 def get_credentials():
     credentials = sc.sticky['azure.common.credentials'].ServicePrincipalCredentials(
@@ -27,6 +30,7 @@ def get_credentials():
 
     return credentials
 
+
 # This Creates a resource group
 def create_resource_group(resource_group_client):
     resource_group_params = {'location': LOCATION}
@@ -34,6 +38,7 @@ def create_resource_group(resource_group_client):
         GROUP_NAME,
         resource_group_params
     )
+
 
 # This creates an availability set (look more into what these do)
 def create_availability_set(compute_client, Instance):
@@ -48,6 +53,7 @@ def create_availability_set(compute_client, Instance):
         avset_params
     )
 
+
 # This creates MULTIPLE public IP addresses
 def create_public_ip_address(network_client, Instance):
     public_ip_addess_params = {
@@ -60,6 +66,7 @@ def create_public_ip_address(network_client, Instance):
         public_ip_addess_params
     )
     return creation_result.result()
+
 
 # This creates a virtual network
 def create_vnet(network_client, Instance):
@@ -75,9 +82,10 @@ def create_vnet(network_client, Instance):
         vnet_params
     )
     while not creation_result.done():
-        pass
+        time.sleep(10)
 
     return creation_result.result()
+
 
 # This adds the subnet to the virtual network
 def create_subnet(network_client, Instance):
@@ -91,6 +99,7 @@ def create_subnet(network_client, Instance):
         subnet_params
     )
     return creation_result.result()
+
 
 # This creates a network interface for the virtual network
 def create_nic(network_client, Instance):
@@ -118,7 +127,10 @@ def create_nic(network_client, Instance):
         'myNic' + "_" + str(Instance),
         nic_params
     )
+    while not creation_result.done():
+        time.sleep(5)
     return creation_result.result()
+
 
 # This will create a CUSTOM virtual machine
 def create_customvm(network_client, compute_client, Instance):
@@ -159,8 +171,8 @@ def create_customvm(network_client, compute_client, Instance):
         VM_NAME + "-" + str(Instance),
         vm_parameters
     )
-    while creation_result.status() == "InProgress":
-        pass
+    while not creation_result.done():
+        time.sleep(5)
 
     return creation_result.result()
 
@@ -185,6 +197,7 @@ compute_client = sc.sticky['azure.mgmt.compute'].ComputeManagementClient(
 )
 
 # Run the VM Creation Loop
+
 if Generate_VM:
     for i in range(int(VM_Count)):
         print("Creating Instance " + str(i))
@@ -208,6 +221,8 @@ if Generate_VM:
         print("VM Created")
         print
         "-----------------------------------------------------------------"
+
+
 else:
     print("Switch Turned Off")
 
