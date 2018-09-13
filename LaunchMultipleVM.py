@@ -1,5 +1,5 @@
 
-
+import time
 from azure.common.credentials import ServicePrincipalCredentials
 from azure.mgmt.resource import ResourceManagementClient
 from azure.mgmt.compute import ComputeManagementClient
@@ -74,7 +74,9 @@ def create_vnet(network_client,Instance):
         'myVNet' + "_" + str(Instance),
         vnet_params
     )
-    creation_result.wait()
+    while not creation_result.done():
+        pass
+
     return creation_result.result()
 
 # This adds the subnet to the virtual network
@@ -210,7 +212,9 @@ def create_customvm(network_client, compute_client, Instance):
         VM_NAME + "-" + str(Instance),
         vm_parameters
     )
-    creation_result.wait()
+    while creation_result.status() == "InProgress":
+        pass
+
     return creation_result.result()
 
 # This will give information about the current VM
@@ -350,7 +354,7 @@ if __name__ == "__main__" and Run_Code:
         SUBSCRIPTION_ID
     )
 
-    VM_Count = 3
+    VM_Count = 2
 
     # # Call the resource group
     # create_resource_group(resource_group_client)
