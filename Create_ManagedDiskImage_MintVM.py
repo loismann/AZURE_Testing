@@ -248,6 +248,8 @@ def update_vm(compute_client):
         vm
     )
 
+    wsgi =
+
     return update_result.result()
 
 # This will add another Data disk to the virtual machine

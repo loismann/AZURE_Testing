@@ -192,7 +192,7 @@ def create_customvm(network_client, compute_client):
         },
         'storage_profile': {
             'image_reference': {
-                'id' : '/subscriptions/1153c71f-6990-467b-b1ec-c2ba46824d64/resourceGroups/VM_Images_PF/providers/Microsoft.Compute/images/mintradianceimagepf'
+                'id' : '/subscriptions/1153c71f-6990-467b-b1ec-c2ba46824d64/resourceGroups/Ubuntu_Radiance_LINE/providers/Microsoft.Compute/images/RadianceTemplate_LINE'
             }
         },
         'network_profile': {
@@ -351,45 +351,29 @@ if __name__ == "__main__" and Run_Code:
 
     # Call the resource group
     create_resource_group(resource_group_client)
-    input("Resource group created. Press enter to continue...")
-
-    # # Create the availability set
+    print("Created Resource Group")
+    # Create the availability set
     create_availability_set(compute_client)
-    print("------------------------------------------------------")
-    input('Availability set created. Press enter to continue...')
+    print("Created Availability Set")
+    # Create a public IP address
+    create_public_ip_address(network_client)
+    # Create the virtual network
+    create_vnet(network_client)
+    print("Virtual Network Created")
+    # Add the subnet to the virtual network
+    create_subnet(network_client)
+    print("Subnet added to virtual network")
+    # Create the network interface
+    create_nic(network_client)
+    print("Network Interface Created")
+    # FINALLY Create the virtual machine
+    create_customvm(network_client, compute_client)
+    print("Virtual Machine Created")
+    # Revel in your Success
+    print("Success!!!")
 
-    # # Create a public IP address
-    creation_result = create_public_ip_address(network_client)
-    print("------------------------------------------------------")
-    print(creation_result)
-    input('Public IP address created. Press enter to continue...')
 
-    # # Create the virtual network
-    # creation_result = create_vnet(network_client)
-    # print("------------------------------------------------------")
-    # print(creation_result)
-    # input('Virtual Network Created. Press enter to continue...')
 
-    # # Add the subnet to the virtual network
-    # creation_result = create_subnet(network_client)
-    # print("------------------------------------------------------")
-    # print(creation_result)
-    # input('Subnet added to virtual network. Press enter to continue...')
-
-    # # Create the network interface
-    # creation_result = create_nic(network_client)
-    # print("------------------------------------------------------")
-    # print(creation_result)
-    # input('Network Interface created. Press enter to continue...')
-
-    ## FINALLY Create the virtual machine
-    # creation_result = create_customvm(network_client, compute_client)
-    # print("------------------------------------------------------")
-    # print(creation_result)
-    # input('Virtual Machine Created. Press enter to continue...')
-
-    ## Revel in your Success
-    # print "Success!!!"
 
     ## Get information about the VM
     # get_vm(compute_client)
