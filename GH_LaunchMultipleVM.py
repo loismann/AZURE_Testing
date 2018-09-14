@@ -1,5 +1,17 @@
 import scriptcontext as sc
 import time
+import getpass
+import datetime
+#import Rhino.UI.StatusBar as statusbar
+
+#### This sticky dictionary is being used to ensure the log output does not get deleted after boolean button press
+if clear_logs:
+    sc.sticky.clear()
+
+if sc.sticky.has_key("Message"):
+    stickyval = sc.sticky["Message"]
+else:
+    stickyval = "Nothing Run Yet"
 
 # These are the original import statements that will not be needed in grasshopper
 # from azure.common.credentials import ServicePrincipalCredentials
@@ -10,7 +22,7 @@ import time
 
 # General Variables
 SUBSCRIPTION_ID = '1153c71f-6990-467b-b1ec-c2ba46824d64'
-GROUP_NAME = 'AUTOBUNTU'
+GROUP_NAME = 'AUTOBUNTU_' + str(getpass.getuser())
 LOCATION = 'southcentralus'
 VM_NAME = 'AutoBuntu'
 ADMIN_NAME = "pferrer"
@@ -180,7 +192,7 @@ def create_customvm(network_client, compute_client, Instance):
 # Run Code
 credentials = get_credentials()
 
-# Initialize Manegement Clients
+# Initialize Management Clients
 resource_group_client = sc.sticky['azure.mgmt.resource'].ResourceManagementClient(
     credentials,
     SUBSCRIPTION_ID
@@ -197,33 +209,63 @@ compute_client = sc.sticky['azure.mgmt.compute'].ComputeManagementClient(
 )
 
 # Run the VM Creation Loop
-
 if Generate_VM:
+    updatecounter = 0
+    # statusbar.ShowProgressMeter(0, ((7*VM_Count)+1), "Calculating", True, True)
+
+    # Start the sticky dictionary entry
+    log_message = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S') + str("\n")
+
+    # Create the resource group
+    create_resource_group(resource_group_client)
+    log_message += "Created Resource Group\n\n"
+    # statusbar.UpdateProgressMeter(updatecounter + 1, True)
+    updatecounter += 1
+
     for i in range(int(VM_Count)):
-        print("Creating Instance " + str(i))
+        log_message += "Creating Instance " + str(i) + " ...\n"
+        # statusbar.UpdateProgressMeter(updatecounter +1 , True)
+        updatecounter +=1
         # Create an Availability Set
         create_availability_set(compute_client, i)
-        print("Availability Set Created")
+        log_message += "Availability Set Created\n"
+        # statusbar.UpdateProgressMeter(updatecounter + 1, True)
+        updatecounter += 1
         # Create a public IP address
         create_public_ip_address(network_client, i)
-        print("IP Address Created")
+        log_message += "IP Address Created\n"
+        # statusbar.UpdateProgressMeter(updatecounter + 1, True)
+        updatecounter += 1
         # Create virtual network
         create_vnet(network_client, i)
-        print("Virtual Network Created")
+        log_message += "Virtual Network Created\n"
+        # statusbar.UpdateProgressMeter(updatecounter + 1, True)
+        updatecounter += 1
         # Create Subnet
         create_subnet(network_client, i)
-        print("Subnet Created")
+        log_message += "Subnet Created\n"
+        # statusbar.UpdateProgressMeter(updatecounter + 1, True)
+        updatecounter += 1
         # Create Network Interface
         create_nic(network_client, i)
-        print("Network Interface Created")
+        log_message += "Network Interface Created\n"
+        # statusbar.UpdateProgressMeter(updatecounter + 1, True)
+        updatecounter += 1
         # Create Custom VM
         create_customvm(network_client, compute_client, i)
-        print("VM Created")
-        print
-        "-----------------------------------------------------------------"
+        log_message += "VM Created\n"
+        log_message += "-----------------------------------------------------------------"
+        # statusbar.UpdateProgressMeter(updatecounter + 1, True)
+        updatecounter += 1
+
+    # statusbar.HideProgressMeter()
+    sc.sticky["Message"] = log_message
+
 
 
 else:
-    print("Switch Turned Off")
+    print stickyval
+
+
 
 
