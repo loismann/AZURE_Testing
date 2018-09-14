@@ -1,10 +1,9 @@
-
-
+from paramiko import client
 from azure.common.credentials import ServicePrincipalCredentials
 from azure.mgmt.resource import ResourceManagementClient
 from azure.mgmt.compute import ComputeManagementClient
 from azure.mgmt.network import NetworkManagementClient
-from azure.mgmt.compute.models import DiskCreateOption
+
 
 #General Variables
 SUBSCRIPTION_ID = '1153c71f-6990-467b-b1ec-c2ba46824d64'
@@ -63,3 +62,46 @@ ip_name = ip_reference[8]
 public_ip = network_client.public_ip_addresses.get(ip_group, ip_name)
 public_ip = public_ip.ip_address
 print(public_ip)
+
+
+
+# Remote Machine Information Change as needed
+Server_Address = "40.74.229.97"
+Username = "pferrer"
+Password = "Password_001"
+
+
+class ssh:
+    client = None
+
+    def __init__(self, address, username, password):
+        # Let the user know we're connecting to the server
+        print("Connecting to server...")
+        # Create a new SSH client
+        self.client = client.SSHClient()
+        # The following line is required if you want to script to be able to access a server thats not yet in the known_hosts file
+        self.client.set_missing_host_key_policy(client.AutoAddPolicy())
+        # Make the connection
+        self.client.connect(address,username=username,password=password,look_for_keys=False)
+
+    def sendCommand(self,command):
+        # Check to see if connection has been made previously
+        if(self.client):
+            stdin,stdout,stderr = self.client.exec_command(command)
+            while not stdout.channel.exit_status_ready():
+                # Print stdout data when available
+                if stdout.channel.recv_ready():
+                    # Retrieve the first 1024 bytes
+                    alldata = stdout.channel.recv(1024)
+                    while stdout.channel.recv_ready():
+                        # Retrieve the next 1024 bytes
+                        alldata += stdout.channel.recv(1024)
+
+                    # Print as string with utf8 encoding
+                    print(str(alldata, "utf8"))
+        else:
+            print("Connection not opened.")
+
+# Connect to virtual machine and run a command
+connection = ssh(public_ip, Username, Password)
+connection.sendCommand("mkdir testfolder")
