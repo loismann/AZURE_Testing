@@ -6,7 +6,8 @@ import datetime
 
 #### This sticky dictionary is being used to ensure the log output does not get deleted after boolean button press
 if clear_logs:
-    del sc.sticky["Message"]
+    if "Message" in sc.sticky:
+        del sc.sticky["Message"]
 
 if sc.sticky.has_key("Message"):
     stickyval = sc.sticky["Message"]
