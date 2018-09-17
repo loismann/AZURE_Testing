@@ -2,15 +2,23 @@ import scriptcontext as sc
 import time
 import getpass
 import datetime
-#import Rhino.UI.StatusBar as statusbar
+import Grasshopper.DataTree as DataTree
+from Grasshopper.Kernel.Data import GH_Path
+
+# import Rhino.UI.StatusBar as statusbar
 
 #### This sticky dictionary is being used to ensure the log output does not get deleted after boolean button press
 if clear_logs:
     if "Message" in sc.sticky:
         del sc.sticky["Message"]
+    if "IP" in sc.sticky:
+        del sc.sticky["IP"]
 
 if sc.sticky.has_key("Message"):
     stickyval = sc.sticky["Message"]
+elif sc.sticky.has_key("IP"):
+    stickyvalip = sc.sticky["IP"]
+
 else:
     stickyval = "Nothing Run Yet"
 
@@ -209,6 +217,9 @@ compute_client = sc.sticky['azure.mgmt.compute'].ComputeManagementClient(
     SUBSCRIPTION_ID
 )
 
+# Create tree structure to pass through the IP Addresses
+T_IPAddress = DataTree[str]()
+
 # Run the VM Creation Loop
 if Generate_VM:
     updatecounter = 0
@@ -224,49 +235,72 @@ if Generate_VM:
     updatecounter += 1
 
     for i in range(int(VM_Count)):
-        log_message += "Creating Instance " + str(i) + " ...\n"
-        # statusbar.UpdateProgressMeter(updatecounter +1 , True)
-        updatecounter +=1
-        # Create an Availability Set
-        create_availability_set(compute_client, i)
-        log_message += "Availability Set Created\n"
-        # statusbar.UpdateProgressMeter(updatecounter + 1, True)
-        updatecounter += 1
-        # Create a public IP address
-        create_public_ip_address(network_client, i)
-        log_message += "IP Address Created\n"
-        # statusbar.UpdateProgressMeter(updatecounter + 1, True)
-        updatecounter += 1
-        # Create virtual network
-        create_vnet(network_client, i)
-        log_message += "Virtual Network Created\n"
-        # statusbar.UpdateProgressMeter(updatecounter + 1, True)
-        updatecounter += 1
-        # Create Subnet
-        create_subnet(network_client, i)
-        log_message += "Subnet Created\n"
-        # statusbar.UpdateProgressMeter(updatecounter + 1, True)
-        updatecounter += 1
-        # Create Network Interface
-        create_nic(network_client, i)
-        log_message += "Network Interface Created\n"
-        # statusbar.UpdateProgressMeter(updatecounter + 1, True)
-        updatecounter += 1
-        # Create Custom VM
-        create_customvm(network_client, compute_client, i)
-        log_message += "VM Created\n"
-        log_message += "-----------------------------------------------------------------"
-        # statusbar.UpdateProgressMeter(updatecounter + 1, True)
+        path = GH_Path(i)
+        # log_message += "Creating Instance " + str(i) + " ...\n"
+        # # statusbar.UpdateProgressMeter(updatecounter +1 , True)
+        # updatecounter += 1
+        # # Create an Availability Set
+        # create_availability_set(compute_client, i)
+        # log_message += "Availability Set Created\n"
+        # # statusbar.UpdateProgressMeter(updatecounter + 1, True)
+        # updatecounter += 1
+        # # Create a public IP address
+        # create_public_ip_address(network_client, i)
+        # log_message += "IP Address Created\n"
+        # # statusbar.UpdateProgressMeter(updatecounter + 1, True)
+        # updatecounter += 1
+        # # Create virtual network
+        # create_vnet(network_client, i)
+        # log_message += "Virtual Network Created\n"
+        # # statusbar.UpdateProgressMeter(updatecounter + 1, True)
+        # updatecounter += 1
+        # # Create Subnet
+        # create_subnet(network_client, i)
+        # log_message += "Subnet Created\n"
+        # # statusbar.UpdateProgressMeter(updatecounter + 1, True)
+        # updatecounter += 1
+        # # Create Network Interface
+        # create_nic(network_client, i)
+        # log_message += "Network Interface Created\n"
+        # # statusbar.UpdateProgressMeter(updatecounter + 1, True)
+        # updatecounter += 1
+        # # Create Custom VM
+        # create_customvm(network_client, compute_client, i)
+        # log_message += "VM Created\n"
+        # log_message += "-----------------------------------------------------------------"
+        # # statusbar.UpdateProgressMeter(updatecounter + 1, True)
+
+
+        # Get the IP addresses for SSH Connections
+        # Get the VM Instance
+        vm = compute_client.virtual_machines.get(GROUP_NAME, VM_NAME + "-" + str(i), expand='instanceView')
+        # print(vm)
+        # Unfortunate and convoluted way of obtaining public IP of selected instance
+        ni_reference = vm.network_profile.network_interfaces[0]
+        ni_reference = ni_reference.id.split('/')
+        ni_group = ni_reference[4]
+        ni_name = ni_reference[8]
+
+        net_interface = network_client.network_interfaces.get(ni_group, ni_name)
+        ip_reference = net_interface.ip_configurations[0].public_ip_address
+        ip_reference = ip_reference.id.split('/')
+        ip_group = ip_reference[4]
+        ip_name = ip_reference[8]
+
+        public_ip = network_client.public_ip_addresses.get(ip_group, ip_name)
+        public_ip = public_ip.ip_address
+
+        T_IPAddress.Add(str(public_ip), path)
         updatecounter += 1
 
     # statusbar.HideProgressMeter()
     sc.sticky["Message"] = log_message
-
-
-
+    sc.sticky["IP"] = T_IPAddress
+    print(stickyval)
+    # print(stickyvalip)
 else:
-    print stickyval
-
+    print(stickyval)
+    # print(stickyvalip)
 
 
 

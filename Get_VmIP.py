@@ -103,5 +103,12 @@ class ssh:
             print("Connection not opened.")
 
 # Connect to virtual machine and run a command
-connection = ssh(public_ip, Username, Password)
-connection.sendCommand("mkdir testfolder")
+# connection = ssh(public_ip, Username, Password)
+# connection.sendCommand("mkdir testfolder")
+
+# from shutil import copyfile
+#
+# src =
+#
+# copyfile(src,dst)
+
