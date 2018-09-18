@@ -1,4 +1,110 @@
+import os
+import getpass
+import scriptcontext as sc
+paramiko = sc.sticky['paramiko']
+#from paramiko import client
 
+
+
+
+
+#General Variables
+SUBSCRIPTION_ID = '1153c71f-6990-467b-b1ec-c2ba46824d64'
+GROUP_NAME = 'AUTOBUNTU'
+LOCATION = 'southcentralus'
+VM_NAME = 'AutoBuntu'
+ADMIN_NAME = "pferrer"
+ADMIN_PSWD = "Password_001"
+
+############################################## SUPPORTING RESOURCE SETUP ###############################################
+
+#This gets all Active Directory credentials
+def get_credentials():
+    credentials = sc.sticky['azure.common.credentials'].ServicePrincipalCredentials(
+        client_id = '36783696-531f-4a87-8276-b6e477560a0c',
+        secret = '2kvy1gZpynDzcluutR+Vw2WE2DcOshPH5u2gVvw/JX0=',
+        tenant = '0ce7a0d4-9659-4ec3-bda3-9388f55c55af'
+    )
+
+    return credentials
+
+#Instantiate all the management clients:
+def instantiateMgmtClient():
+
+    credentials = get_credentials()
+
+    # Initialize Management Clients
+    resource_group_client = sc.sticky['azure.mgmt.resource'].ResourceManagementClient(
+        credentials,
+        SUBSCRIPTION_ID
+    )
+
+    network_client = sc.sticky['azure.mgmt.network'].NetworkManagementClient(
+        credentials,
+        SUBSCRIPTION_ID
+    )
+
+    compute_client = sc.sticky['azure.mgmt.compute'].ComputeManagementClient(
+        credentials,
+        SUBSCRIPTION_ID
+    )
+    return [resource_group_client,network_client,compute_client]
+
+def getVMinstance():
+    # Find out how many active VM's are in existence
+
+    #Create an object that is the VM instance
+    vm = compute_client.virtual_machines.get(GROUP_NAME, VM_NAME, expand='instanceView')
+
+    # Unfortunate and convoluted way of obtaining public IP of selected instance
+    ni_reference = vm.network_profile.network_interfaces[0]
+    ni_reference = ni_reference.id.split('/')
+    ni_group = ni_reference[4]
+    ni_name = ni_reference[8]
+
+    net_interface = network_client.network_interfaces.get(ni_group, ni_name)
+    ip_reference = net_interface.ip_configurations[0].public_ip_address
+    ip_reference = ip_reference.id.split('/')
+    ip_group = ip_reference[4]
+    ip_name = ip_reference[8]
+
+    public_ip = network_client.public_ip_addresses.get(ip_group, ip_name)
+    public_ip = public_ip.ip_address
+    print(public_ip)
+
+
+
+
+class ssh:
+    client = None
+
+    def __init__(self, address, username, password):
+        # Let the user know we're connecting to the server
+        print("Connecting to server...")
+        # Create a new SSH client
+        self.client = client.SSHClient()
+        # The following line is required if you want to script to be able to access a server thats not yet in the known_hosts file
+        self.client.set_missing_host_key_policy(client.AutoAddPolicy())
+        # Make the connection
+        self.client.connect(address,username=username,password=password,look_for_keys=False)
+
+    def sendCommand(self,command):
+        # Check to see if connection has been made previously
+        if(self.client):
+            stdin,stdout,stderr = self.client.exec_command(command)
+            while not stdout.channel.exit_status_ready():
+                # Print stdout data when available
+                if stdout.channel.recv_ready():
+                    # Retrieve the first 1024 bytes
+                    alldata = stdout.channel.recv(1024)
+                    while stdout.channel.recv_ready():
+                        # Retrieve the next 1024 bytes
+                        alldata += stdout.channel.recv(1024)
+
+                    # Print as string with utf8 encoding
+                    print(str(alldata, "utf8"))
+        else:
+            print("Connection not opened.")
 
 def executeBatchFiles(self, batchFileNames, maxPRuns=None, shell=False, waitingTime=0.5):
     """Run a number of batch files in parallel and
@@ -52,7 +158,6 @@ def executeBatchFiles(self, batchFileNames, maxPRuns=None, shell=False, waitingT
         print
         "Something went wrong: %s" % str(e)
 
-
 def runBatchFiles(self, initBatchFileName, batchFileNames, fileNames, \
                   pcompBatchFile, waitingTime, runInBackground=False):
     self.executeBatchFiles([initBatchFileName], maxPRuns=1, shell=runInBackground, waitingTime=waitingTime)
@@ -60,7 +165,6 @@ def runBatchFiles(self, initBatchFileName, batchFileNames, fileNames, \
 
     if pcompBatchFile != "":
         os.system(pcompBatchFile)  # put all the files together
-
 
 def collectResults(self, subWorkingDir, radFileName, numOfCPUs, analysisRecipe, expectedResultFiles):
     if analysisRecipe.type == 2:
@@ -134,7 +238,6 @@ def collectResults(self, subWorkingDir, radFileName, numOfCPUs, analysisRecipe, 
         time.sleep(1)
         return RADResultFilesAddress
 
-
 def bat_to_sh(file_path):
     """Convert a honeybee .bat file to .sh file.
 
@@ -142,15 +245,19 @@ def bat_to_sh(file_path):
     """
     sh_file = file_path[:-4] + '.sh'
     with open(file_path, 'rb') as inf, open(sh_file, 'wb') as outf:
+        # print inf
         outf.write('#!/usr/bin/env bash\n\n')
-        for line in inf:
+        row = inf.readlines()
+        # print row
+        for line in row:
             # pass the path lines, etc to get to the commands
             if line.strip():
                 continue
             else:
                 break
 
-        for line in inf:
+        for line in row:
+            # print line
             if line.startswith('echo'):
                 continue
             # replace c:\radiance\bin and also chanege \\ to /
@@ -161,7 +268,58 @@ def bat_to_sh(file_path):
     return sh_file
 
 
-# if __name__ == '__main__':
-#     file_path = \
-#         r'C:\ladybug\170914_DA_Study_with_DC\gridbased_daylightcoeff\commands.bat'
-#     bash_file_path = bat_to_sh(file_path)
+
+
+###########################################  RUN CODE ####################################################
+
+
+# Main: Get the IP addresses of the machines currently in use
+# Sub: Instantiate the Azure clients
+resource_group_client = instantiateMgmtClient()[0]
+network_client = instantiateMgmtClient()[1]
+compute_client = instantiateMgmtClient()[2]
+
+# Sub: Find the resource group that the user created
+myresource_group = None
+for item in resource_group_client.resource_groups.list():
+    if str(getpass.getuser()) in str(item):
+        myresource_group = item.name
+
+#Sub: List the resources that are in the group we just found
+for item in resource_group_client.resources.list_by_resource_group(myresource_group):
+    if "Microsoft.Compute/virtualMachines" in str(item):
+        print item
+
+
+
+
+
+
+
+# Find out how many machines are currently running in a given resource group
+# Get the IP addresses of those machines
+# For this example connect to one machine and then push a series of files over
+
+
+
+# walk through the directory, get and then process all the batch files
+# if Run:
+#     for root, dirs, files in os.walk(os.path.abspath(study_folder)):
+#         for file in files:
+#             file_path = os.path.join(root, file)
+#             if file_path.endswith(".bat"):
+#                 # print file_path
+#                 bat_to_sh(file_path)
+
+
+
+# Connect to virtual machine and run a command
+# connection = ssh(public_ip, Username, Password)
+# connection.sendCommand("mkdir testfolder")
+
+# from shutil import copyfile
+#
+# src =
+#
+# copyfile(src,dst)
+

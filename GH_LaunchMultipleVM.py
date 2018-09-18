@@ -11,15 +11,9 @@ from Grasshopper.Kernel.Data import GH_Path
 if clear_logs:
     if "Message" in sc.sticky:
         del sc.sticky["Message"]
-    if "IP" in sc.sticky:
-        del sc.sticky["IP"]
 
 if sc.sticky.has_key("Message"):
     stickyval = sc.sticky["Message"]
-
-
-if sc.sticky.has_key("IP"):
-    stickyvalip = sc.sticky["IP"]
 
 else:
     stickyval = "Nothing Run Yet"
@@ -274,38 +268,14 @@ if Generate_VM:
         # log_message += "-----------------------------------------------------------------"
         # # statusbar.UpdateProgressMeter(updatecounter + 1, True)
 
-
-        # Get the IP addresses for SSH Connections
-        # Get the VM Instance
-        vm = compute_client.virtual_machines.get(GROUP_NAME, VM_NAME + "-" + str(i), expand='instanceView')
-        # print(vm)
-        # Unfortunate and convoluted way of obtaining public IP of selected instance
-        ni_reference = vm.network_profile.network_interfaces[0]
-        ni_reference = ni_reference.id.split('/')
-        ni_group = ni_reference[4]
-        ni_name = ni_reference[8]
-
-        net_interface = network_client.network_interfaces.get(ni_group, ni_name)
-        ip_reference = net_interface.ip_configurations[0].public_ip_address
-        ip_reference = ip_reference.id.split('/')
-        ip_group = ip_reference[4]
-        ip_name = ip_reference[8]
-
-        public_ip = network_client.public_ip_addresses.get(ip_group, ip_name)
-        public_ip = public_ip.ip_address
-        # add this ip address to a list
-        sc.sticky["IP" + str(i)] = public_ip
-        # T_IPAddress.Add(str(public_ip), path)
-        updatecounter += 1
-
     # statusbar.HideProgressMeter()
     sc.sticky["Message"] = log_message
-    # sc.sticky["IP"] = Public_IP_List
+
     print(stickyval)
-    print(stickyvalip)
+
 else:
     print(stickyval)
-    # print(stickyvalip)
+
 
 
 
