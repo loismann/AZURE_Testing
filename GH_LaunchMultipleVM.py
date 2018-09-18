@@ -16,11 +16,14 @@ if clear_logs:
 
 if sc.sticky.has_key("Message"):
     stickyval = sc.sticky["Message"]
-elif sc.sticky.has_key("IP"):
+
+
+if sc.sticky.has_key("IP"):
     stickyvalip = sc.sticky["IP"]
 
 else:
     stickyval = "Nothing Run Yet"
+    stickyvalip = ":)"
 
 # These are the original import statements that will not be needed in grasshopper
 # from azure.common.credentials import ServicePrincipalCredentials
@@ -219,9 +222,10 @@ compute_client = sc.sticky['azure.mgmt.compute'].ComputeManagementClient(
 
 # Create tree structure to pass through the IP Addresses
 T_IPAddress = DataTree[str]()
-
+Public_IP_List = []
 # Run the VM Creation Loop
 if Generate_VM:
+
     updatecounter = 0
     # statusbar.ShowProgressMeter(0, ((7*VM_Count)+1), "Calculating", True, True)
 
@@ -289,15 +293,16 @@ if Generate_VM:
 
         public_ip = network_client.public_ip_addresses.get(ip_group, ip_name)
         public_ip = public_ip.ip_address
-
-        T_IPAddress.Add(str(public_ip), path)
+        # add this ip address to a list
+        sc.sticky["IP" + str(i)] = public_ip
+        # T_IPAddress.Add(str(public_ip), path)
         updatecounter += 1
 
     # statusbar.HideProgressMeter()
     sc.sticky["Message"] = log_message
-    sc.sticky["IP"] = T_IPAddress
+    # sc.sticky["IP"] = Public_IP_List
     print(stickyval)
-    # print(stickyvalip)
+    print(stickyvalip)
 else:
     print(stickyval)
     # print(stickyvalip)
