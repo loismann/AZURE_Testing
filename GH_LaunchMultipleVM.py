@@ -234,39 +234,39 @@ if Generate_VM:
 
     for i in range(int(VM_Count)):
         path = GH_Path(i)
-        # log_message += "Creating Instance " + str(i) + " ...\n"
-        # # statusbar.UpdateProgressMeter(updatecounter +1 , True)
-        # updatecounter += 1
-        # # Create an Availability Set
-        # create_availability_set(compute_client, i)
-        # log_message += "Availability Set Created\n"
-        # # statusbar.UpdateProgressMeter(updatecounter + 1, True)
-        # updatecounter += 1
-        # # Create a public IP address
-        # create_public_ip_address(network_client, i)
-        # log_message += "IP Address Created\n"
-        # # statusbar.UpdateProgressMeter(updatecounter + 1, True)
-        # updatecounter += 1
-        # # Create virtual network
-        # create_vnet(network_client, i)
-        # log_message += "Virtual Network Created\n"
-        # # statusbar.UpdateProgressMeter(updatecounter + 1, True)
-        # updatecounter += 1
-        # # Create Subnet
-        # create_subnet(network_client, i)
-        # log_message += "Subnet Created\n"
-        # # statusbar.UpdateProgressMeter(updatecounter + 1, True)
-        # updatecounter += 1
-        # # Create Network Interface
-        # create_nic(network_client, i)
-        # log_message += "Network Interface Created\n"
-        # # statusbar.UpdateProgressMeter(updatecounter + 1, True)
-        # updatecounter += 1
-        # # Create Custom VM
-        # create_customvm(network_client, compute_client, i)
-        # log_message += "VM Created\n"
-        # log_message += "-----------------------------------------------------------------"
-        # # statusbar.UpdateProgressMeter(updatecounter + 1, True)
+        log_message += "Creating Instance " + str(i) + " ...\n"
+        # statusbar.UpdateProgressMeter(updatecounter +1 , True)
+        updatecounter += 1
+        # Create an Availability Set
+        create_availability_set(compute_client, i)
+        log_message += "Availability Set Created\n"
+        # statusbar.UpdateProgressMeter(updatecounter + 1, True)
+        updatecounter += 1
+        # Create a public IP address
+        create_public_ip_address(network_client, i)
+        log_message += "IP Address Created\n"
+        # statusbar.UpdateProgressMeter(updatecounter + 1, True)
+        updatecounter += 1
+        # Create virtual network
+        create_vnet(network_client, i)
+        log_message += "Virtual Network Created\n"
+        # statusbar.UpdateProgressMeter(updatecounter + 1, True)
+        updatecounter += 1
+        # Create Subnet
+        create_subnet(network_client, i)
+        log_message += "Subnet Created\n"
+        # statusbar.UpdateProgressMeter(updatecounter + 1, True)
+        updatecounter += 1
+        # Create Network Interface
+        create_nic(network_client, i)
+        log_message += "Network Interface Created\n"
+        # statusbar.UpdateProgressMeter(updatecounter + 1, True)
+        updatecounter += 1
+        # Create Custom VM
+        create_customvm(network_client, compute_client, i)
+        log_message += "VM Created\n"
+        log_message += "-----------------------------------------------------------------"
+        # statusbar.UpdateProgressMeter(updatecounter + 1, True)
 
     # statusbar.HideProgressMeter()
     sc.sticky["Message"] = log_message

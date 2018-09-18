@@ -10,10 +10,10 @@ paramiko = sc.sticky['paramiko']
 
 #General Variables
 SUBSCRIPTION_ID = '1153c71f-6990-467b-b1ec-c2ba46824d64'
-GROUP_NAME = 'AUTOBUNTU'
+GROUP_NAME = 'AUTOBUNTU_' + str(getpass.getuser())
 LOCATION = 'southcentralus'
 VM_NAME = 'AutoBuntu'
-ADMIN_NAME = "pferrer"
+ADMIN_NAME = str(getpass.getuser())
 ADMIN_PSWD = "Password_001"
 
 ############################################## SUPPORTING RESOURCE SETUP ###############################################
@@ -30,7 +30,7 @@ def get_credentials():
 
 #Instantiate all the management clients:
 def instantiateMgmtClient():
-
+    # Run the credentials function
     credentials = get_credentials()
 
     # Initialize Management Clients
@@ -52,9 +52,8 @@ def instantiateMgmtClient():
 
 def getVMinstance():
     # Find out how many active VM's are in existence
-
-    #Create an object that is the VM instance
-    vm = compute_client.virtual_machines.get(GROUP_NAME, VM_NAME, expand='instanceView')
+    # Create an object that is the VM instance
+    vm = compute_client.virtual_machines.get(GROUP_NAME, VM_NAME + "-" + str(i), expand='instanceView')
 
     # Unfortunate and convoluted way of obtaining public IP of selected instance
     ni_reference = vm.network_profile.network_interfaces[0]
@@ -70,10 +69,7 @@ def getVMinstance():
 
     public_ip = network_client.public_ip_addresses.get(ip_group, ip_name)
     public_ip = public_ip.ip_address
-    print(public_ip)
-
-
-
+    return public_ip
 
 class ssh:
     client = None
@@ -105,6 +101,35 @@ class ssh:
                     print(str(alldata, "utf8"))
         else:
             print("Connection not opened.")
+
+def bat_to_sh(file_path):
+    """Convert a honeybee .bat file to .sh file.
+
+    WARNING: This is a very simple function and doesn't handle any edge cases.
+    """
+    sh_file = file_path[:-4] + '.sh'
+    with open(file_path, 'rb') as inf, open(sh_file, 'wb') as outf:
+        # print inf
+        outf.write('#!/usr/bin/env bash\n\n')
+        row = inf.readlines()
+        # print row
+        for line in row:
+            # pass the path lines, etc to get to the commands
+            if line.strip():
+                continue
+            else:
+                break
+
+        for line in row:
+            # print line
+            if line.startswith('echo'):
+                continue
+            # replace c:\radiance\bin and also chanege \\ to /
+            modified_line = line.replace('c:\\radiance\\bin\\', '').replace('\\', '/')
+            outf.write(modified_line)
+
+    print('bash file is created at:\n\t%s' % sh_file)
+    return sh_file
 
 def executeBatchFiles(self, batchFileNames, maxPRuns=None, shell=False, waitingTime=0.5):
     """Run a number of batch files in parallel and
@@ -238,57 +263,34 @@ def collectResults(self, subWorkingDir, radFileName, numOfCPUs, analysisRecipe, 
         time.sleep(1)
         return RADResultFilesAddress
 
-def bat_to_sh(file_path):
-    """Convert a honeybee .bat file to .sh file.
 
-    WARNING: This is a very simple function and doesn't handle any edge cases.
-    """
-    sh_file = file_path[:-4] + '.sh'
-    with open(file_path, 'rb') as inf, open(sh_file, 'wb') as outf:
-        # print inf
-        outf.write('#!/usr/bin/env bash\n\n')
-        row = inf.readlines()
-        # print row
-        for line in row:
-            # pass the path lines, etc to get to the commands
-            if line.strip():
-                continue
-            else:
-                break
-
-        for line in row:
-            # print line
-            if line.startswith('echo'):
-                continue
-            # replace c:\radiance\bin and also chanege \\ to /
-            modified_line = line.replace('c:\\radiance\\bin\\', '').replace('\\', '/')
-            outf.write(modified_line)
-
-    print('bash file is created at:\n\t%s' % sh_file)
-    return sh_file
 
 
 
 
 ###########################################  RUN CODE ####################################################
 
+if Run:
+    # Main: Get the IP addresses of the machines currently in use
+    # Sub: Instantiate the Azure clients
+    resource_group_client = instantiateMgmtClient()[0]
+    network_client = instantiateMgmtClient()[1]
+    compute_client = instantiateMgmtClient()[2]
 
-# Main: Get the IP addresses of the machines currently in use
-# Sub: Instantiate the Azure clients
-resource_group_client = instantiateMgmtClient()[0]
-network_client = instantiateMgmtClient()[1]
-compute_client = instantiateMgmtClient()[2]
+    # Sub: Find the resource group that the user created
+    myresource_group = None
+    for item in resource_group_client.resource_groups.list():
+        if str(getpass.getuser()) in str(item):
+            myresource_group = item.name
 
-# Sub: Find the resource group that the user created
-myresource_group = None
-for item in resource_group_client.resource_groups.list():
-    if str(getpass.getuser()) in str(item):
-        myresource_group = item.name
+    # #Sub: List the resources that are in the group we just found
+    # for item in resource_group_client.resources.list_by_resource_group(myresource_group):
+    #     if "Microsoft.Compute/virtualMachines" in str(item):
+    #         print item
 
-#Sub: List the resources that are in the group we just found
-for item in resource_group_client.resources.list_by_resource_group(myresource_group):
-    if "Microsoft.Compute/virtualMachines" in str(item):
-        print item
+    for i in range(VM_Count):
+        IP = getVMinstance()
+        print IP
 
 
 
