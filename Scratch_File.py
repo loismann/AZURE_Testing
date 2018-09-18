@@ -2,6 +2,7 @@ import os
 import getpass
 import scriptcontext as sc
 paramiko = sc.sticky['paramiko']
+import time
 #from paramiko import client
 
 # Pull the sticky value for the number of VMs
@@ -320,12 +321,25 @@ if Run:
     ssh_client.connect(hostname=IP_Addresses[0],username=ADMIN_NAME,password=ADMIN_PSWD)
 
     #test command
-    stdin, stdout, stderr = ssh_client.exec_command("sudo mkdir testfolder testfolder2")
-    stdin,stdout,stderr = ssh_client.exec_command("sudo ls")
-    print stdout.readlines()
+    # stdin, stdout, stderr = ssh_client.exec_command("sudo mkdir testfolder testfolder2")
+    # stdin,stdout,stderr = ssh_client.exec_command("sudo ls")
+    # print stdout.readlines()
 
-    #test sending file
-    ftp_client = ssh_client.open_sftp()
-    ftp_client.put(r"C:\Users\pferrer\Desktop\test.txt","/datadrive/test.txt")
-    ftp_client.close()
+    #test sending file (It works!!!!)
+    # ftp_client = ssh_client.open_sftp()
+    # ftp_client.put(r"C:\Users\pferrer\Desktop\test.txt","/datadrive/test.txt")
+    # ftp_client.close()
+
+    # test sending all relevant files in a folder
+
+    for root, dirs, files in os.walk(os.path.abspath(study_folder)):
+        for file in files:
+            old_file_path = os.path.join(root,file)
+            if not old_file_path.endswith(".bat"):
+                # print "file"
+                new_file_path = "/datadrive/" + file
+                ftp_client = ssh_client.open_sftp()
+                ftp_client.put(old_file_path, new_file_path)
+                ftp_client.close()
+                time.sleep(5)
 
