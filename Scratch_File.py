@@ -4,7 +4,11 @@ import scriptcontext as sc
 paramiko = sc.sticky['paramiko']
 #from paramiko import client
 
-
+# Pull the sticky value for the number of VMs
+if sc.sticky.has_key("Global_VM_Count"):
+    VM_Count = sc.sticky["Global_VM_Count"]
+else:
+    print "VM Count Not Detected"
 
 
 
@@ -128,7 +132,7 @@ def bat_to_sh(file_path):
             modified_line = line.replace('c:\\radiance\\bin\\', '').replace('\\', '/')
             outf.write(modified_line)
 
-    print('bash file is created at:\n\t%s' % sh_file)
+    # print('bash file is created at:\n\t%s' % sh_file)
     return sh_file
 
 def executeBatchFiles(self, batchFileNames, maxPRuns=None, shell=False, waitingTime=0.5):
@@ -270,6 +274,8 @@ def collectResults(self, subWorkingDir, radFileName, numOfCPUs, analysisRecipe, 
 
 ###########################################  RUN CODE ####################################################
 
+
+
 if Run:
     # Main: Get the IP addresses of the machines currently in use
     # Sub: Instantiate the Azure clients
@@ -288,40 +294,38 @@ if Run:
     #     if "Microsoft.Compute/virtualMachines" in str(item):
     #         print item
 
+    # List of IP addresses
+    IP_Addresses = []
     for i in range(VM_Count):
         IP = getVMinstance()
-        print IP
+        IP_Addresses.append(IP)
+    print IP_Addresses
 
+    # Find the directory where all the batch files are written
+    # Go through all the folders and files in the simulation folder
+    # for root, dirs, files in os.walk(os.path.abspath(study_folder)):
+    #     for file in files:
+    #         file_path = os.path.join(root, file)
+    #         if file_path.endswith(".bat"):
+    #             # print file_path
+    #             bat_to_sh(file_path)
 
+    # For the Glare analysis, figure out how many simulation folders need to go to each machine
+    # This will be the total number of hours being run divided by the total number of VM instances
 
+    # Connect to virtual machine and run a command
+    ssh_client = paramiko.SSHClient()
+    # This line allows the SSH client to connect without asking if you want to trust
+    ssh_client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+    ssh_client.connect(hostname=IP_Addresses[0],username=ADMIN_NAME,password=ADMIN_PSWD)
 
+    #test command
+    stdin, stdout, stderr = ssh_client.exec_command("sudo mkdir testfolder testfolder2")
+    stdin,stdout,stderr = ssh_client.exec_command("sudo ls")
+    print stdout.readlines()
 
-
-
-# Find out how many machines are currently running in a given resource group
-# Get the IP addresses of those machines
-# For this example connect to one machine and then push a series of files over
-
-
-
-# walk through the directory, get and then process all the batch files
-# if Run:
-#     for root, dirs, files in os.walk(os.path.abspath(study_folder)):
-#         for file in files:
-#             file_path = os.path.join(root, file)
-#             if file_path.endswith(".bat"):
-#                 # print file_path
-#                 bat_to_sh(file_path)
-
-
-
-# Connect to virtual machine and run a command
-# connection = ssh(public_ip, Username, Password)
-# connection.sendCommand("mkdir testfolder")
-
-# from shutil import copyfile
-#
-# src =
-#
-# copyfile(src,dst)
+    #test sending file
+    ftp_client = ssh_client.open_sftp()
+    ftp_client.put(r"C:\Users\pferrer\Desktop\test.txt","/datadrive/test.txt")
+    ftp_client.close()
 

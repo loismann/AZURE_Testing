@@ -11,6 +11,8 @@ from Grasshopper.Kernel.Data import GH_Path
 if clear_logs:
     if "Message" in sc.sticky:
         del sc.sticky["Message"]
+    if "Global_VM_Count" in sc.sticky:
+        del sc.sticky["Message"]
 
 if sc.sticky.has_key("Message"):
     stickyval = sc.sticky["Message"]
@@ -19,12 +21,17 @@ else:
     stickyval = "Nothing Run Yet"
     stickyvalip = ":)"
 
+#Add the "VM_Count" Variable to the sticky Dictionary
+sc.sticky["Global_VM_Count"] = VM_Count
+
+
 # These are the original import statements that will not be needed in grasshopper
 # from azure.common.credentials import ServicePrincipalCredentials
 # from azure.mgmt.resource import ResourceManagementClient
 # from azure.mgmt.computeimport ComputeManagementClient
 # from azure.mgmt.networkimport NetworkManagementClient
 # from azure.mgmt.compute.modelsimport DiskCreateOption
+
 
 # General Variables
 SUBSCRIPTION_ID = '1153c71f-6990-467b-b1ec-c2ba46824d64'
@@ -33,6 +40,7 @@ LOCATION = 'southcentralus'
 VM_NAME = 'AutoBuntu'
 ADMIN_NAME = "pferrer"
 ADMIN_PSWD = "Password_001"
+
 
 
 #
