@@ -268,7 +268,16 @@ def collectResults(self, subWorkingDir, radFileName, numOfCPUs, analysisRecipe, 
         time.sleep(1)
         return RADResultFilesAddress
 
-
+def copyfile(IP_Address, port, username, password, source, destination):
+    ssh_client = paramiko.SSHClient()
+    ssh_client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+    t = paramiko.Transport(IP_Address, port)
+    t.connect(username=username, password=password)
+    sftp = paramiko.SFTPClient.from_transport(t)
+    sftp.put(source,destination)
+    time.sleep(5)
+    sftp.close()
+    t.close()
 
 
 
@@ -315,10 +324,11 @@ if Run:
     # This will be the total number of hours being run divided by the total number of VM instances
 
     # Connect to virtual machine and run a command
-    ssh_client = paramiko.SSHClient()
+
+
     # This line allows the SSH client to connect without asking if you want to trust
-    ssh_client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-    ssh_client.connect(hostname=IP_Addresses[0],username=ADMIN_NAME,password=ADMIN_PSWD)
+
+    #ssh_client.connect(hostname=IP_Addresses[0],username=ADMIN_NAME,password=ADMIN_PSWD)
 
     #test command
     # stdin, stdout, stderr = ssh_client.exec_command("sudo mkdir testfolder testfolder2")
@@ -334,12 +344,14 @@ if Run:
 
     for root, dirs, files in os.walk(os.path.abspath(study_folder)):
         for file in files:
-            old_file_path = os.path.join(root,file)
-            if not old_file_path.endswith(".bat"):
-                # print "file"
-                new_file_path = "/datadrive/" + file
-                ftp_client = ssh_client.open_sftp()
-                ftp_client.put(old_file_path, new_file_path)
-                ftp_client.close()
-                time.sleep(5)
+            # print file
+            original_file_path = os.path.join(root, file)
+            if not original_file_path.endswith(".bat"):
+                print original_file_path
+                destination_file_path = "/datadrive/" + file
+                copyfile(IP_Addresses[0],22,ADMIN_NAME,ADMIN_PSWD,original_file_path,destination_file_path)
+                # ftp_client = ssh_client.open_sftp()
+                # ftp_client.put(old_file_path, destination_file_path)
+                # ftp_client.close()
+                # time.sleep(5)
 
