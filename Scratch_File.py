@@ -3,7 +3,10 @@ import getpass
 import scriptcontext as sc
 paramiko = sc.sticky['paramiko']
 import time
-#from paramiko import client
+scp = sc.sticky['scp']
+pysftp = sc.sticky['pysftp']
+
+
 
 # Pull the sticky value for the number of VMs
 if sc.sticky.has_key("Global_VM_Count"):
@@ -279,8 +282,57 @@ def copyfile(IP_Address, port, username, password, source, destination):
     sftp.close()
     t.close()
 
+def copyfile2(IP_Address,username,password,port,source,destination):
+    client = paramiko.SSHClient()
+    client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+    client.load_system_host_keys()
 
+    client.connect(IP_Address,username=username,password=password,port=port)
+    tr = client.get_transport()
+    tr.default_max_packet_size = 10000000000
+    tr.default_window_size = 10000000000
+    sftp = client.open_sftp()
+    sftp.put(source,destination)
 
+def copyfilescp(IP_Address,username,password,port,source,destination):
+    client = paramiko.SSHClient()
+    client.load_system_host_keys()
+    client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+    client.connect(IP_Address, port, username, password)
+
+    return client
+
+def copyfilesscp2(IP_Address, port, username, password, source, destination):
+    ssh_client = paramiko.SSHClient()
+    ssh_client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+    ssh_client.connect(IP_Address,username=username,password=password,port=port)
+    # print scp.SCPClient
+    tr = ssh_client.get_transport()
+    print type(tr)
+    # tr.default_max_packet_size = 10000000000
+    # tr.default_window_size = 10000000000
+    # scp_run = scp.SCPClient(tr)
+    # scp_run.put(source,destination)
+    # time.sleep(4)
+    # scp_run.close()
+    # tr.close()
+
+def copyfilepysftp(IP_Address, port, username, password, source, destination):
+    cnopts = pysftp.CnOpts()
+    cnopts.hostkeys = None
+    with pysftp.Connection(host=IP_Address, port=port, username=username, password=password, cnopts=cnopts) as sftp:
+        sftp.put(source,preserve_mtime=True)
+        sftp.close()
+
+def fixfile(filename):
+    windows_line_ending = '\r\n'
+    linux_line_ending = '\n'
+    with open(filename, 'rb') as f:
+        content = f.read()
+        content = content.replace(windows_line_ending, linux_line_ending)
+    with open(filename, 'wb') as f:
+        f.write(content)
+    print "did something"
 
 ###########################################  RUN CODE ####################################################
 
@@ -347,11 +399,16 @@ if Run:
             # print file
             original_file_path = os.path.join(root, file)
             if not original_file_path.endswith(".bat"):
-                print original_file_path
-                destination_file_path = "/datadrive/" + file
-                copyfile(IP_Addresses[0],22,ADMIN_NAME,ADMIN_PSWD,original_file_path,destination_file_path)
+                # print original_file_path
+                destination_file_path = "/home/pferrer/" + file
+                # print destination_file_path
+                fixfile(original_file_path)
+
+                # There are multiple functions defined above trying to do more or less the same thing
+                copyfilepysftp(IP_Addresses[0],22,ADMIN_NAME,ADMIN_PSWD,original_file_path,destination_file_path)
                 # ftp_client = ssh_client.open_sftp()
                 # ftp_client.put(old_file_path, destination_file_path)
                 # ftp_client.close()
                 # time.sleep(5)
+                #client.close()
 
