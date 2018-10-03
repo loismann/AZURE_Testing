@@ -305,17 +305,14 @@ def copyfilescp(IP_Address,username,password,port,source,destination):
 def copyfilesscp2(IP_Address, port, username, password, source, destination):
     ssh_client = paramiko.SSHClient()
     ssh_client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-    ssh_client.connect(IP_Address,username=username,password=password,port=port)
-    # print scp.SCPClient
+    ssh_client.connect(IP_Address, port=port, username=username, password=password)
     tr = ssh_client.get_transport()
-    print type(tr)
-    # tr.default_max_packet_size = 10000000000
-    # tr.default_window_size = 10000000000
-    # scp_run = scp.SCPClient(tr)
-    # scp_run.put(source,destination)
-    # time.sleep(4)
-    # scp_run.close()
-    # tr.close()
+    tr.default_max_packet_size = 1000000000
+    tr.default_window_size = 1000000000
+    scp_run = scp.SCPClient(tr)
+    scp_run.put(source,destination)
+    scp_run.close()
+    tr.close()
 
 def copyfilepysftp(IP_Address, port, username, password, source, destination):
     cnopts = pysftp.CnOpts()
@@ -405,7 +402,7 @@ if Run:
                 fixfile(original_file_path)
 
                 # There are multiple functions defined above trying to do more or less the same thing
-                copyfilepysftp(IP_Addresses[0],22,ADMIN_NAME,ADMIN_PSWD,original_file_path,destination_file_path)
+                copyfilesscp2(IP_Addresses[0],22,ADMIN_NAME,ADMIN_PSWD,original_file_path,destination_file_path)
                 # ftp_client = ssh_client.open_sftp()
                 # ftp_client.put(old_file_path, destination_file_path)
                 # ftp_client.close()
