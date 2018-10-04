@@ -1,37 +1,29 @@
 import os
-import getpass
-import scriptcontext as sc
-paramiko = sc.sticky['paramiko']
+import paramiko
 import time
-scp = sc.sticky['scp']
-pysftp = sc.sticky['pysftp']
+import scp
+import pysftp
+from Login_Info import *
+
+from azure.common.credentials import ServicePrincipalCredentials
+from azure.mgmt.resource import ResourceManagementClient
+from azure.mgmt.compute import ComputeManagementClient
+from azure.mgmt.network import NetworkManagementClient
 
 
 
-# Pull the sticky value for the number of VMs
-if sc.sticky.has_key("Global_VM_Count"):
-    VM_Count = sc.sticky["Global_VM_Count"]
-else:
-    print "VM Count Not Detected"
 
 
 
-#General Variables
-SUBSCRIPTION_ID = '1153c71f-6990-467b-b1ec-c2ba46824d64'
-GROUP_NAME = 'AUTOBUNTU_' + str(getpass.getuser())
-LOCATION = 'southcentralus'
-VM_NAME = 'AutoBuntu'
-ADMIN_NAME = str(getpass.getuser())
-ADMIN_PSWD = "Password_001"
 
 ############################################## SUPPORTING RESOURCE SETUP ###############################################
 
 #This gets all Active Directory credentials
 def get_credentials():
-    credentials = sc.sticky['azure.common.credentials'].ServicePrincipalCredentials(
-        client_id = '36783696-531f-4a87-8276-b6e477560a0c',
-        secret = '2kvy1gZpynDzcluutR+Vw2WE2DcOshPH5u2gVvw/JX0=',
-        tenant = '0ce7a0d4-9659-4ec3-bda3-9388f55c55af'
+    credentials = ServicePrincipalCredentials(
+        client_id = APPLICATION_ID,
+        secret = AUTHENTICATION_KEY,
+        tenant = DIRECTORY_ID
     )
 
     return credentials
@@ -42,17 +34,17 @@ def instantiateMgmtClient():
     credentials = get_credentials()
 
     # Initialize Management Clients
-    resource_group_client = sc.sticky['azure.mgmt.resource'].ResourceManagementClient(
+    resource_group_client = ResourceManagementClient(
         credentials,
         SUBSCRIPTION_ID
     )
 
-    network_client = sc.sticky['azure.mgmt.network'].NetworkManagementClient(
+    network_client = NetworkManagementClient(
         credentials,
         SUBSCRIPTION_ID
     )
 
-    compute_client = sc.sticky['azure.mgmt.compute'].ComputeManagementClient(
+    compute_client = ComputeManagementClient(
         credentials,
         SUBSCRIPTION_ID
     )
@@ -61,23 +53,16 @@ def instantiateMgmtClient():
 def getVMinstance():
     # Find out how many active VM's are in existence
     # Create an object that is the VM instance
-    vm = compute_client.virtual_machines.get(GROUP_NAME, VM_NAME + "-" + str(i), expand='instanceView')
+    vm = compute_client.virtual_machines.get(GROUP_NAME, VM_NAME)
+    private_ip = vm.ip_configurations[0].private_ip_address
+    return private_ip
 
-    # Unfortunate and convoluted way of obtaining public IP of selected instance
-    ni_reference = vm.network_profile.network_interfaces[0]
-    ni_reference = ni_reference.id.split('/')
-    ni_group = ni_reference[4]
-    ni_name = ni_reference[8]
 
-    net_interface = network_client.network_interfaces.get(ni_group, ni_name)
-    ip_reference = net_interface.ip_configurations[0].public_ip_address
-    ip_reference = ip_reference.id.split('/')
-    ip_group = ip_reference[4]
-    ip_name = ip_reference[8]
+def getPrivateIP(network_client):
+    nic = network_client.network_interfaces.get(Network_GROUP_NAME, 'AUTOBUNTU_myNic', )
+    ip =  nic.ip_configurations[0].private_ip_address
+    return ip
 
-    public_ip = network_client.public_ip_addresses.get(ip_group, ip_name)
-    public_ip = public_ip.ip_address
-    return public_ip
 
 class ssh:
     client = None
@@ -187,9 +172,8 @@ def executeBatchFiles(self, batchFileNames, maxPRuns=None, shell=False, waitingT
             if finished == total:
                 done = True
 
-    except Exception, e:
-        print
-        "Something went wrong: %s" % str(e)
+    except Exception as e:
+        print("Something went wrong: %s" % str(e))
 
 def runBatchFiles(self, initBatchFileName, batchFileNames, fileNames, \
                   pcompBatchFile, waitingTime, runInBackground=False):
@@ -278,7 +262,6 @@ def copyfile(IP_Address, port, username, password, source, destination):
     t.connect(username=username, password=password)
     sftp = paramiko.SFTPClient.from_transport(t)
     sftp.put(source,destination)
-    time.sleep(5)
     sftp.close()
     t.close()
 
@@ -329,11 +312,11 @@ def fixfile(filename):
         content = content.replace(windows_line_ending, linux_line_ending)
     with open(filename, 'wb') as f:
         f.write(content)
-    print "did something"
+    print("did something")
 
 ###########################################  RUN CODE ####################################################
 
-
+Run = True
 
 if Run:
     # Main: Get the IP addresses of the machines currently in use
@@ -342,11 +325,13 @@ if Run:
     network_client = instantiateMgmtClient()[1]
     compute_client = instantiateMgmtClient()[2]
 
+    ip = getPrivateIP(network_client)
+    print(ip)
     # Sub: Find the resource group that the user created
-    myresource_group = None
-    for item in resource_group_client.resource_groups.list():
-        if str(getpass.getuser()) in str(item):
-            myresource_group = item.name
+    # myresource_group = None
+    # for item in resource_group_client.resource_groups.list():
+    #     if str(getpass.getuser()) in str(item):
+    #         myresource_group = item.name
 
     # #Sub: List the resources that are in the group we just found
     # for item in resource_group_client.resources.list_by_resource_group(myresource_group):
@@ -354,11 +339,11 @@ if Run:
     #         print item
 
     # List of IP addresses
-    IP_Addresses = []
-    for i in range(VM_Count):
-        IP = getVMinstance()
-        IP_Addresses.append(IP)
-    print IP_Addresses
+    # IP_Addresses = []
+    # for i in range(VM_Count):
+    #     IP = getVMinstance()
+    #     IP_Addresses.append(IP)
+    # print IP_Addresses
 
     # Find the directory where all the batch files are written
     # Go through all the folders and files in the simulation folder
@@ -390,22 +375,21 @@ if Run:
     # ftp_client.close()
 
     # test sending all relevant files in a folder
-
+    study_folder = "C:\\ladybug\\AzurePFGlareTesting\\21MAR600\\imageBasedSimulation"
     for root, dirs, files in os.walk(os.path.abspath(study_folder)):
         for file in files:
-            # print file
             original_file_path = os.path.join(root, file)
             if not original_file_path.endswith(".bat"):
                 # print original_file_path
                 destination_file_path = "/home/pferrer/" + file
                 # print destination_file_path
-                fixfile(original_file_path)
-
-                # There are multiple functions defined above trying to do more or less the same thing
-                copyfilesscp2(IP_Addresses[0],22,ADMIN_NAME,ADMIN_PSWD,original_file_path,destination_file_path)
-                # ftp_client = ssh_client.open_sftp()
-                # ftp_client.put(old_file_path, destination_file_path)
-                # ftp_client.close()
-                # time.sleep(5)
-                #client.close()
+                # fixfile(original_file_path)
+            #
+            #     # There are multiple functions defined above trying to do more or less the same thing
+                copyfile(ip,22,ADMIN_NAME,ADMIN_PSWD,original_file_path,destination_file_path)
+            #     # ftp_client = ssh_client.open_sftp()
+            #     # ftp_client.put(old_file_path, destination_file_path)
+            #     # ftp_client.close()
+            #     # time.sleep(5)
+            #     #client.close()
 

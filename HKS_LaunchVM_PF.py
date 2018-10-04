@@ -6,22 +6,20 @@ from azure.mgmt.compute import ComputeManagementClient
 from azure.mgmt.network import NetworkManagementClient
 from azure.mgmt.compute.models import DiskCreateOption
 
-#General Variables
-SUBSCRIPTION_ID = '1153c71f-6990-467b-b1ec-c2ba46824d64'
-GROUP_NAME = 'AUTOBUNTU'
-LOCATION = 'southcentralus'
-VM_NAME = 'AutoBuntu'
-ADMIN_NAME = "pferrer"
-ADMIN_PSWD = "Password_001"
+from Login_Info import *
+import time
+
+
+
 
 ############################################## SUPPORTING RESOURCE SETUP ###############################################
 
 #This gets all Active Directory credentials
 def get_credentials():
     credentials = ServicePrincipalCredentials(
-        client_id = '36783696-531f-4a87-8276-b6e477560a0c',
-        secret = '2kvy1gZpynDzcluutR+Vw2WE2DcOshPH5u2gVvw/JX0=',
-        tenant = '0ce7a0d4-9659-4ec3-bda3-9388f55c55af'
+        client_id = APPLICATION_ID,
+        secret = AUTHENTICATION_KEY,
+        tenant = DIRECTORY_ID,
     )
 
     return credentials
@@ -47,6 +45,12 @@ def create_availability_set(compute_client):
         avset_params
     )
 
+
+# Reference Existing HKS Network
+def ref_private_ip_address(network_client):
+    private_ip = network_client.network_interfaces.get('RenderFarmVNET', 'vnettest590').ip_configurations[0].private_ip_address
+    print(private_ip)
+
 # This creates a public IP address
 def create_public_ip_address(network_client):
     public_ip_addess_params = {
@@ -54,12 +58,45 @@ def create_public_ip_address(network_client):
         'public_ip_allocation_method': 'Dynamic'
     }
     creation_result = network_client.public_ip_addresses.create_or_update(
-        GROUP_NAME,
-        'myIPAddress',
+        Network_GROUP_NAME,
+        'AUTOBUNTU_myIPAddress',
         public_ip_addess_params
     )
 
     return creation_result.result()
+
+# This will hopefully delete the public IP address
+def delete_public_ip_address(compute_client,network_client):
+    nic = network_client.network_interfaces.get(Network_GROUP_NAME, 'AUTOBUNTU_myNic', )
+    print(nic.id)
+
+    #https://docs.microsoft.com/en-us/python/api/azure-mgmt-network/azure.mgmt.network.v2018_08_01.models.networkinterfaceipconfiguration?view=azure-python
+    #https://github.com/Azure/azure-sdk-for-python/issues/695#issuecomment-236024219
+    nic.ip_configurations[0].public_ip_address = None
+    network_client.network_interfaces.create_or_update(Network_GROUP_NAME, 'AUTOBUNTU_myNic', nic)
+
+    # vm = compute_client.virtual_machines.get(GROUP_NAME, VM_NAME)
+    # print(type(vm))
+    # vm.ip_configurations[0].public_ip_address = None
+
+    # public_ip_addess_params = {
+    #     'location': LOCATION,
+    #     'ip_address': None
+    #
+    # }
+    # creation_result = network_client.public_ip_addresses.create_or_update(
+    #     Network_GROUP_NAME,
+    #     'AUTOBUNTU_myIPAddress',
+    #     public_ip_addess_params
+    # )
+    # return creation_result
+
+    # ipaddress = network_client.public_ip_addresses.get(
+    #     Network_GROUP_NAME,
+    #     'AUTOBUNTU_myIPAddress',
+    # )
+
+
 
 # This creates a virtual network
 def create_vnet(network_client):
@@ -90,7 +127,7 @@ def create_subnet(network_client):
 
     return creation_result.result()
 
-# This creates a network interface for the virtual network
+# This creates a network interface (from scratch) for the virtual network
 def create_nic(network_client):
     subnet_info = network_client.subnets.get(
         GROUP_NAME,
@@ -119,6 +156,34 @@ def create_nic(network_client):
 
     return creation_result.result()
 
+# This creates a network interface using Existing HKS Resources
+def create_HKSnic(network_client):
+    subnet_info = network_client.subnets.get(
+        Network_GROUP_NAME,
+        Network_VNET,
+        Network_SUBNET
+    )
+    publicIPAddress = network_client.public_ip_addresses.get(
+        Network_GROUP_NAME,
+        'AUTOBUNTU_myIPAddress'
+    )
+    nic_params = {
+        'location': LOCATION,
+        'ip_configurations': [{
+            'name': 'myIPConfig',
+            'public_ip_address': publicIPAddress,
+            'subnet': {
+                'id': subnet_info.id
+            }
+        }]
+    }
+    creation_result = network_client.network_interfaces.create_or_update(
+        Network_GROUP_NAME,
+        'AUTOBUNTU_myNic',
+        nic_params
+    )
+
+    return creation_result.result()
 
 
 ########################################### VIRTUAL MACHINE SETUP AND USE ##############################################
@@ -128,13 +193,13 @@ def create_nic(network_client):
 # This will create a virtual machine
 def create_vm(network_client, compute_client):
     nic = network_client.network_interfaces.get(
-        GROUP_NAME,
-        'myNic'
+        Network_GROUP_NAME,
+        'AUTOBUNTU_myNic'
     )
-    avset = compute_client.availability_sets.get(
-        GROUP_NAME,
-        'myAVSet'
-    )
+    # avset = compute_client.availability_sets.get(
+    #     GROUP_NAME,
+    #     'myAVSet'
+    # )
     vm_parameters = {
         'location': LOCATION,
         'os_profile': {
@@ -158,9 +223,9 @@ def create_vm(network_client, compute_client):
                 'id': nic.id
             }]
         },
-        'availability_set': {
-            'id': avset.id
-        }
+        # 'availability_set': {
+        #     'id': avset.id
+        # }
     }
     creation_result = compute_client.virtual_machines.create_or_update(
         GROUP_NAME,
@@ -176,10 +241,10 @@ def create_customvm(network_client, compute_client):
         GROUP_NAME,
         'myNic'
     )
-    avset = compute_client.availability_sets.get(
-        GROUP_NAME,
-        'myAVSet'
-    )
+    # avset = compute_client.availability_sets.get(
+    #     GROUP_NAME,
+    #     'myAVSet'
+    # )
     vm_parameters = {
         'location': LOCATION,
         'os_profile': {
@@ -325,51 +390,69 @@ def delete_resources(resource_group_client):
 
 ########################################### RUN VIRTUAL MACHINE CODE ###################################################
 
-Run_Code = False
+Run_Code = True
 
 
 #Run Code
 if __name__ == "__main__" and Run_Code:
-    print("Hello World")
+    # print("Hello World")
     credentials = get_credentials()
+    # print(credentials)
+    # Initialize Management Clients
+    resource_group_client = ResourceManagementClient(
+        credentials,
+        SUBSCRIPTION_ID
+    )
 
-    # # Initialize Management Clients
-    # resource_group_client = ResourceManagementClient(
-    #     credentials,
-    #     SUBSCRIPTION_ID
-    # )
-    #
-    # network_client = NetworkManagementClient(
-    #     credentials,
-    #     SUBSCRIPTION_ID
-    # )
-    #
-    # compute_client = ComputeManagementClient(
-    #     credentials,
-    #     SUBSCRIPTION_ID
-    # )
-    #
-    # # Call the resource group
+    network_client = NetworkManagementClient(
+        credentials,
+        SUBSCRIPTION_ID
+    )
+
+    compute_client = ComputeManagementClient(
+        credentials,
+        SUBSCRIPTION_ID
+    )
+
+    # Call the resource group
     # create_resource_group(resource_group_client)
     # print("Created Resource Group")
     # # Create the availability set
     # create_availability_set(compute_client)
     # print("Created Availability Set")
-    # # Create a public IP address
+
+    # Create a public IP address
     # create_public_ip_address(network_client)
+
+    # Ref private ip
+    # print(ref_private_ip_address(network_client))
+
     # # Create the virtual network
     # create_vnet(network_client)
     # print("Virtual Network Created")
+
     # # Add the subnet to the virtual network
     # create_subnet(network_client)
     # print("Subnet added to virtual network")
-    # # Create the network interface
-    # create_nic(network_client)
+
+    # Create the network interface
+    # create_HKSnic(network_client)
     # print("Network Interface Created")
-    # # FINALLY Create the virtual machine
-    # create_customvm(network_client, compute_client)
+
+    # FINALLY Create the virtual machine
+    # create_vm(network_client, compute_client)
     # print("Virtual Machine Created")
-    # # Revel in your Success
+
+    # Test the deletion of the public ip
+    # sleep first
+    # for i in range(25):
+    #     print(i)
+    #     time.sleep(1)
+
+    result = delete_public_ip_address(compute_client,network_client)
+
+    # print("Public IP address removed")
+    # Revel in your Success
     # print("Success!!!")
 
     ## Get information about the VM
@@ -409,9 +492,10 @@ if __name__ == "__main__" and Run_Code:
     # delete_resources(resource_group_client)
     # input('Resources Deleted. Press enter to continue...')
 
-    print ("Revel in your success!")
+    # print ("Revel in your success!")
 else:
     print ("Just testing stuff")
+    print (SUBSCRIPTION_ID)
 
 
 
