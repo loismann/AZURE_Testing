@@ -66,36 +66,14 @@ def create_public_ip_address(network_client):
     return creation_result.result()
 
 # This will hopefully delete the public IP address
-def delete_public_ip_address(compute_client,network_client):
+def disassociate_public_ip_address(compute_client, network_client):
     nic = network_client.network_interfaces.get(Network_GROUP_NAME, 'AUTOBUNTU_myNic', )
-    print(nic.id)
-
     #https://docs.microsoft.com/en-us/python/api/azure-mgmt-network/azure.mgmt.network.v2018_08_01.models.networkinterfaceipconfiguration?view=azure-python
     #https://github.com/Azure/azure-sdk-for-python/issues/695#issuecomment-236024219
+    # This will dissassocate the public ip address from the VM:
     nic.ip_configurations[0].public_ip_address = None
+    # This updates the network interface that currently exists with the properties of the variable "nic" assigned above
     network_client.network_interfaces.create_or_update(Network_GROUP_NAME, 'AUTOBUNTU_myNic', nic)
-
-    # vm = compute_client.virtual_machines.get(GROUP_NAME, VM_NAME)
-    # print(type(vm))
-    # vm.ip_configurations[0].public_ip_address = None
-
-    # public_ip_addess_params = {
-    #     'location': LOCATION,
-    #     'ip_address': None
-    #
-    # }
-    # creation_result = network_client.public_ip_addresses.create_or_update(
-    #     Network_GROUP_NAME,
-    #     'AUTOBUNTU_myIPAddress',
-    #     public_ip_addess_params
-    # )
-    # return creation_result
-
-    # ipaddress = network_client.public_ip_addresses.get(
-    #     Network_GROUP_NAME,
-    #     'AUTOBUNTU_myIPAddress',
-    # )
-
 
 
 # This creates a virtual network
@@ -449,7 +427,7 @@ if __name__ == "__main__" and Run_Code:
     #     print(i)
     #     time.sleep(1)
 
-    result = delete_public_ip_address(compute_client,network_client)
+    result = disassociate_public_ip_address(compute_client, network_client)
 
     # print("Public IP address removed")
     # Revel in your Success
