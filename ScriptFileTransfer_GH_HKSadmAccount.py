@@ -3,7 +3,7 @@ import scriptcontext as sc
 paramiko = sc.sticky['paramiko']
 import time
 scp = sc.sticky['scp']
-pysftp = sc.sticky['pysftp']
+
 
 
 # Pull the sticky value for the number of VMs
@@ -47,7 +47,7 @@ def instantiateMgmtClient():
     )
     return [resource_group_client,network_client,compute_client]
 
-# This will disassociate the public IP address from the VM after its created
+# This will find the private (internal HKS) IP address for a VM
 def getPrivateIpAddress(network_client, Instance):
     nic = network_client.network_interfaces.get(sc.sticky['Login_Info'].GROUP_NAME,
                                                 sc.sticky['Login_Info'].GROUP_NAME + '_myNic_' + str(Instance), )
@@ -247,6 +247,7 @@ def fixfile(filename):
         content = content.replace(windows_line_ending, linux_line_ending)
     with open(filename, 'wb') as f:
         f.write(content)
+
 
 
 ###########################################  RUN CODE ####################################################
