@@ -146,36 +146,35 @@ def create_HKSnic(network_client, Instance):
         }]
     }
     creation_result = network_client.network_interfaces.create_or_update(
-        Network_GROUP_NAME,
-        sc.sticky['Login_Info'].GROUP_NAME + '_myNic' + str(Instance),
+        sc.sticky['Login_Info'].GROUP_NAME,
+        sc.sticky['Login_Info'].GROUP_NAME + '_myNic_' + str(Instance),
         nic_params
     )
+    while not creation_result.done():
+        time.sleep(5)
 
     return creation_result.result()
 
 # This will create a CUSTOM virtual machine
 def create_customvm(network_client, compute_client, Instance):
     nic = network_client.network_interfaces.get(
-        GROUP_NAME,
-        'myNic' + "_" + str(Instance)
+        sc.sticky['Login_Info'].GROUP_NAME,
+        sc.sticky['Login_Info'].GROUP_NAME + '_myNic_' + str(Instance),
     )
-    avset = compute_client.availability_sets.get(
-        GROUP_NAME,
-        'myAVSet' + "_" + str(Instance)
-    )
+
     vm_parameters = {
-        'location': LOCATION,
+        'location': sc.sticky['Login_Info'].LOCATION,
         'os_profile': {
-            'computer_name': VM_NAME + "-" + str(Instance),
-            'admin_username': ADMIN_NAME,
-            'admin_password': ADMIN_PSWD
+            'computer_name': sc.sticky['Login_Info'].VM_NAME + "-" + str(Instance),
+            'admin_username': sc.sticky['Login_Info'].ADMIN_NAME,
+            'admin_password': sc.sticky['Login_Info'].ADMIN_PSWD
         },
         'hardware_profile': {
             'vm_size': 'Standard_DS1'
         },
         'storage_profile': {
             'image_reference': {
-                'id': '/subscriptions/1153c71f-6990-467b-b1ec-c2ba46824d64/resourceGroups/Ubuntu_Radiance_LINE/providers/Microsoft.Compute/images/RadianceTemplate_LINE'
+                'id': '/subscriptions/9fe06a7b-b34d-4fe5-aea4-9c012830c497/resourceGroups/LINE_DISKIMAGES/providers/Microsoft.Compute/images/LINEUbuntuRadianceImage'
             }
         },
         'network_profile': {
@@ -183,13 +182,10 @@ def create_customvm(network_client, compute_client, Instance):
                 'id': nic.id
             }]
         },
-        'availability_set': {
-            'id': avset.id
-        }
     }
     creation_result = compute_client.virtual_machines.create_or_update(
-        GROUP_NAME,
-        VM_NAME + "-" + str(Instance),
+        sc.sticky['Login_Info'].GROUP_NAME,
+        sc.sticky['Login_Info'].VM_NAME + "-" + str(Instance),
         vm_parameters
     )
     while not creation_result.done():
@@ -229,13 +225,13 @@ if Generate_VM:
 
     # Start the sticky dictionary entry
     log_message = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S') + str("\n")
-    #
+
     # Create the resource group
-    ######### create_resource_group(resource_group_client)
-    #########log_message += "Created Resource Group\n\n"
+    create_resource_group(resource_group_client)
+    log_message += "Created Resource Group\n\n"
     # statusbar.UpdateProgressMeter(updatecounter + 1, True)
     updatecounter += 1
-    #
+
     for i in range(int(VM_Count)):
         path = GH_Path(i)
         log_message += "Creating Instance " + str(i) + " ...\n"
@@ -255,12 +251,13 @@ if Generate_VM:
         create_customvm(network_client, compute_client, i)
         log_message += "VM Created\n"
         log_message += "-----------------------------------------------------------------"
-        # statusbar.UpdateProgressMeter(updatecounter + 1, True)
+        # # statusbar.UpdateProgressMeter(updatecounter + 1, True)
 
     # statusbar.HideProgressMeter()
     sc.sticky["Message"] = log_message
 
     print(stickyval)
+    print(log_message)
 
 else:
     print(stickyval)

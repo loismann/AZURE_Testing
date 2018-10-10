@@ -58,8 +58,8 @@ def create_public_ip_address(network_client):
         'public_ip_allocation_method': 'Dynamic'
     }
     creation_result = network_client.public_ip_addresses.create_or_update(
-        Network_GROUP_NAME,
-        'AUTOBUNTU_myIPAddress',
+        GROUP_NAME,
+        GROUP_NAME + '_IPAddress_',
         public_ip_addess_params
     )
 
@@ -142,8 +142,8 @@ def create_HKSnic(network_client):
         Network_SUBNET
     )
     publicIPAddress = network_client.public_ip_addresses.get(
-        Network_GROUP_NAME,
-        'AUTOBUNTU_myIPAddress'
+        GROUP_NAME,
+        GROUP_NAME + '_IPAddress_',
     )
     nic_params = {
         'location': LOCATION,
@@ -157,7 +157,7 @@ def create_HKSnic(network_client):
     }
     creation_result = network_client.network_interfaces.create_or_update(
         Network_GROUP_NAME,
-        'AUTOBUNTU_myNic',
+        GROUP_NAME + '_LINENic_',
         nic_params
     )
 
@@ -400,7 +400,8 @@ if __name__ == "__main__" and Run_Code:
     # print("Created Availability Set")
 
     # Create a public IP address
-    # create_public_ip_address(network_client)
+    create_public_ip_address(network_client)
+    print("Public IP created")
 
     # Ref private ip
     # print(ref_private_ip_address(network_client))
@@ -414,8 +415,8 @@ if __name__ == "__main__" and Run_Code:
     # print("Subnet added to virtual network")
 
     # Create the network interface
-    # create_HKSnic(network_client)
-    # print("Network Interface Created")
+    create_HKSnic(network_client)
+    print("Network Interface Created")
 
     # FINALLY Create the virtual machine
     # create_vm(network_client, compute_client)
@@ -427,7 +428,7 @@ if __name__ == "__main__" and Run_Code:
     #     print(i)
     #     time.sleep(1)
 
-    result = disassociate_public_ip_address(compute_client, network_client)
+    # result = disassociate_public_ip_address(compute_client, network_client)
 
     # print("Public IP address removed")
     # Revel in your Success
@@ -473,7 +474,6 @@ if __name__ == "__main__" and Run_Code:
     # print ("Revel in your success!")
 else:
     print ("Just testing stuff")
-    print (SUBSCRIPTION_ID)
 
 
 
