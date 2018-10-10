@@ -25,12 +25,7 @@ sc.sticky["Global_VM_Count"] = VM_Count
 
 
 
-# General Variables
-# These are referenced in from the Login Info File
 
-
-
-#
 ############################################### SUPPORTING RESOURCE SETUP ###############################################
 #
 # This gets all Active Directory credentials
@@ -81,14 +76,17 @@ def create_public_ip_address(network_client, Instance):
     return creation_result.result()
 
 # This will disassociate the public IP address from the VM after its created
-def disassociate_public_ip_address(compute_client, network_client, Instance):
-    nic = network_client.network_interfaces.get(Network_GROUP_NAME, 'AUTOBUNTU_myNic', )
+def disassociate_public_ip_address(network_client, Instance):
+    nic = network_client.network_interfaces.get(sc.sticky['Login_Info'].GROUP_NAME,
+                                                sc.sticky['Login_Info'].GROUP_NAME + '_myNic_' + str(Instance), )
     #https://docs.microsoft.com/en-us/python/api/azure-mgmt-network/azure.mgmt.network.v2018_08_01.models.networkinterfaceipconfiguration?view=azure-python
     #https://github.com/Azure/azure-sdk-for-python/issues/695#issuecomment-236024219
     # This will dissassocate the public ip address from the VM:
     nic.ip_configurations[0].public_ip_address = None
     # This updates the network interface that currently exists with the properties of the variable "nic" assigned above
-    network_client.network_interfaces.create_or_update(Network_GROUP_NAME, 'AUTOBUNTU_myNic', nic)
+    network_client.network_interfaces.create_or_update(sc.sticky['Login_Info'].GROUP_NAME,
+                                                       sc.sticky['Login_Info'].GROUP_NAME + '_myNic_' + str(Instance),
+                                                       nic)
 
 
 # This creates a virtual network
@@ -196,7 +194,6 @@ def create_customvm(network_client, compute_client, Instance):
 
 
 
-
 # # Run Code
 credentials = get_credentials()
 #
@@ -223,44 +220,47 @@ compute_client = sc.sticky['azure.mgmt.compute'].ComputeManagementClient(
 # Run the VM Creation Loop
 if Generate_VM:
 
-    # updatecounter = 0
-    # # statusbar.ShowProgressMeter(0, ((7*VM_Count)+1), "Calculating", True, True)
-    #
-    # # Start the sticky dictionary entry
-    log_message = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S') + str("\n")
-    #
-    # # Create the resource group
-    # create_resource_group(resource_group_client)
-    # log_message += "Created Resource Group\n\n"
-    # # statusbar.UpdateProgressMeter(updatecounter + 1, True)
-    # updatecounter += 1
-    #
-    # for i in range(int(VM_Count)):
-    #     path = GH_Path(i)
-    #     log_message += "Creating Instance " + str(i) + " ...\n"
-    #     # statusbar.UpdateProgressMeter(updatecounter +1 , True)
-    #     updatecounter += 1
-    #     # Create a public IP address
-    #     create_public_ip_address(network_client, i)
-    #     log_message += "IP Address Created\n"
-    #     # statusbar.UpdateProgressMeter(updatecounter + 1, True)
-    #     updatecounter += 1
-    #     # Create Network Interface
-    #     create_HKSnic(network_client, i)
-    #     log_message += "Network Interface Created\n"
-    #     # statusbar.UpdateProgressMeter(updatecounter + 1, True)
-    #     updatecounter += 1
-    #     # Create Custom VM
-    #     create_customvm(network_client, compute_client, i)
-    #     log_message += "VM Created\n"
-    #     log_message += "-----------------------------------------------------------------"
-    #     # # statusbar.UpdateProgressMeter(updatecounter + 1, True)
-    #
-    # # statusbar.HideProgressMeter()
+    updatecounter = 0
+    # statusbar.ShowProgressMeter(0, ((7*VM_Count)+1), "Calculating", True, True)
+
+    # Start the sticky dictionary entry
+    log_message = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+
+    # Create the resource group
+    create_resource_group(resource_group_client)
+    log_message += "\nCreated Resource Group\n\n"
+    # statusbar.UpdateProgressMeter(updatecounter + 1, True)
+    updatecounter += 1
+
+    for i in range(int(VM_Count)):
+        path = GH_Path(i)
+        log_message += "Creating Instance " + str(i) + " ...\n"
+        # statusbar.UpdateProgressMeter(updatecounter +1 , True)
+        updatecounter += 1
+        # Create a public IP address
+        create_public_ip_address(network_client, i)
+        log_message += "IP Address Created\n"
+        # statusbar.UpdateProgressMeter(updatecounter + 1, True)
+        updatecounter += 1
+        # Create Network Interface
+        create_HKSnic(network_client, i)
+        log_message += "Network Interface Created\n"
+        # statusbar.UpdateProgressMeter(updatecounter + 1, True)
+        updatecounter += 1
+        # Create Custom VM
+        create_customvm(network_client, compute_client, i)
+        log_message += "VM Created\n"
+        # Disassociate the IP address from the VM
+        disassociate_public_ip_address(network_client, i)
+        log_message += "Public IP address unlinked"
+        log_message += "--------------------------------------------\n"
+        # # statusbar.UpdateProgressMeter(updatecounter + 1, True)
+
+    # statusbar.HideProgressMeter()
     sc.sticky["Message"] = log_message
 
     print(stickyval)
-    print(log_message)
+    # print(log_message)
 
 else:
     print(stickyval)
