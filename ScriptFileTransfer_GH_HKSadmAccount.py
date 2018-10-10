@@ -1,5 +1,4 @@
 import os
-import getpass
 import scriptcontext as sc
 paramiko = sc.sticky['paramiko']
 import time
@@ -62,58 +61,7 @@ def getPrivateIpAddress(network_client, Instance):
                                                        nic)
     return privateIP
 
-def getVMinstance():
-    # Find out how many active VM's are in existence
-    # Create an object that is the VM instance
-    vm = compute_client.virtual_machines.get(GROUP_NAME, VM_NAME + "-" + str(i), expand='instanceView')
-
-    # Unfortunate and convoluted way of obtaining public IP of selected instance
-    ni_reference = vm.network_profile.network_interfaces[0]
-    ni_reference = ni_reference.id.split('/')
-    ni_group = ni_reference[4]
-    ni_name = ni_reference[8]
-
-    net_interface = network_client.network_interfaces.get(ni_group, ni_name)
-    ip_reference = net_interface.ip_configurations[0].public_ip_address
-    ip_reference = ip_reference.id.split('/')
-    ip_group = ip_reference[4]
-    ip_name = ip_reference[8]
-
-    public_ip = network_client.public_ip_addresses.get(ip_group, ip_name)
-    public_ip = public_ip.ip_address
-    return public_ip
-
-class ssh:
-    client = None
-
-    def __init__(self, address, username, password):
-        # Let the user know we're connecting to the server
-        print("Connecting to server...")
-        # Create a new SSH client
-        self.client = client.SSHClient()
-        # The following line is required if you want to script to be able to access a server thats not yet in the known_hosts file
-        self.client.set_missing_host_key_policy(client.AutoAddPolicy())
-        # Make the connection
-        self.client.connect(address,username=username,password=password,look_for_keys=False)
-
-    def sendCommand(self,command):
-        # Check to see if connection has been made previously
-        if(self.client):
-            stdin,stdout,stderr = self.client.exec_command(command)
-            while not stdout.channel.exit_status_ready():
-                # Print stdout data when available
-                if stdout.channel.recv_ready():
-                    # Retrieve the first 1024 bytes
-                    alldata = stdout.channel.recv(1024)
-                    while stdout.channel.recv_ready():
-                        # Retrieve the next 1024 bytes
-                        alldata += stdout.channel.recv(1024)
-
-                    # Print as string with utf8 encoding
-                    print(str(alldata, "utf8"))
-        else:
-            print("Connection not opened.")
-
+# This translates the bat files in the study folder into bash files
 def bat_to_sh(file_path):
     """Convert a honeybee .bat file to .sh file.
 
@@ -143,7 +91,8 @@ def bat_to_sh(file_path):
     # print('bash file is created at:\n\t%s' % sh_file)
     return sh_file
 
-def executeBatchFiles(self, batchFileNames, maxPRuns=None, shell=False, waitingTime=0.5):
+# Not sure the difference between this and "runBatchFiles"
+def executeBatchFiles(self, batchFileNames, maxPRuns=None, shell=True, waitingTime=0.5):
     """Run a number of batch files in parallel and
         wait to end of the analysis.
 
@@ -194,6 +143,7 @@ def executeBatchFiles(self, batchFileNames, maxPRuns=None, shell=False, waitingT
     except Exception, e:
         print "Something went wrong: %s" % str(e)
 
+# Not sure the difference between this and "excecuteBatchFiles"
 def runBatchFiles(self, initBatchFileName, batchFileNames, fileNames, \
                   pcompBatchFile, waitingTime, runInBackground=False):
     self.executeBatchFiles([initBatchFileName], maxPRuns=1, shell=runInBackground, waitingTime=waitingTime)
@@ -202,6 +152,7 @@ def runBatchFiles(self, initBatchFileName, batchFileNames, fileNames, \
     if pcompBatchFile != "":
         os.system(pcompBatchFile)  # put all the files together
 
+# Does this need to be here?  It's referencing recipes from grasshopper.  Should this be in a separate "results" button?
 def collectResults(self, subWorkingDir, radFileName, numOfCPUs, analysisRecipe, expectedResultFiles):
     if analysisRecipe.type == 2:
         # annual simulation
@@ -274,6 +225,7 @@ def collectResults(self, subWorkingDir, radFileName, numOfCPUs, analysisRecipe, 
         time.sleep(1)
         return RADResultFilesAddress
 
+# Copy the files over from the local computer to a remote computer
 def copyfilesSCP(IP_Address, port, username, password, source, destination):
     ssh_client = paramiko.SSHClient()
     ssh_client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
@@ -286,6 +238,7 @@ def copyfilesSCP(IP_Address, port, username, password, source, destination):
     scp_run.close()
     tr.close()
 
+# This was originally in here to try and fix the file copy problem - not sure if this is still needed
 def fixfile(filename):
     windows_line_ending = '\r\n'
     linux_line_ending = '\n'
