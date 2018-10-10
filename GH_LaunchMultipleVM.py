@@ -9,10 +9,10 @@ from Grasshopper.Kernel.Data import GH_Path
 
 #### This sticky dictionary is being used to ensure the log output does not get deleted after boolean button press
 if clear_logs:
-    if "Message" in sc.sticky:
-        del sc.sticky["Message"]
+    if "Message" in sc.sticky != None:
+        sc.sticky["Message"] = None
     if "Global_VM_Count" in sc.sticky:
-        del sc.sticky["Message"]
+        sc.sticky["Message"] = None
 
 if sc.sticky.has_key("Message"):
     stickyval = sc.sticky["Message"]

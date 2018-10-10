@@ -8,10 +8,10 @@ from Grasshopper.Kernel.Data import GH_Path
 
 #### This sticky dictionary is being used to ensure the log output does not get deleted after boolean button press
 if clear_logs:
-    if "Message" in sc.sticky:
-        del sc.sticky["Message"]
+    if "Message" in sc.sticky != "Nothing Run Yet":
+        sc.sticky["Message"] = "Nothing Run Yet"
     if "Global_VM_Count" in sc.sticky:
-        del sc.sticky["Message"]
+        sc.sticky["Global_VM_Count"] = None
 
 if sc.sticky.has_key("Message"):
     stickyval = sc.sticky["Message"]
@@ -155,6 +155,7 @@ def create_HKSnic(network_client, Instance):
 
     return creation_result.result()
 
+
 # This will create a CUSTOM virtual machine
 def create_customvm(network_client, compute_client, Instance):
     nic = network_client.network_interfaces.get(
@@ -194,6 +195,8 @@ def create_customvm(network_client, compute_client, Instance):
     return creation_result.result()
 
 
+
+
 # # Run Code
 credentials = get_credentials()
 #
@@ -220,40 +223,40 @@ compute_client = sc.sticky['azure.mgmt.compute'].ComputeManagementClient(
 # Run the VM Creation Loop
 if Generate_VM:
 
-    updatecounter = 0
-    # statusbar.ShowProgressMeter(0, ((7*VM_Count)+1), "Calculating", True, True)
-
-    # Start the sticky dictionary entry
+    # updatecounter = 0
+    # # statusbar.ShowProgressMeter(0, ((7*VM_Count)+1), "Calculating", True, True)
+    #
+    # # Start the sticky dictionary entry
     log_message = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S') + str("\n")
-
-    # Create the resource group
-    create_resource_group(resource_group_client)
-    log_message += "Created Resource Group\n\n"
-    # statusbar.UpdateProgressMeter(updatecounter + 1, True)
-    updatecounter += 1
-
-    for i in range(int(VM_Count)):
-        path = GH_Path(i)
-        log_message += "Creating Instance " + str(i) + " ...\n"
-        # statusbar.UpdateProgressMeter(updatecounter +1 , True)
-        updatecounter += 1
-        # Create a public IP address
-        create_public_ip_address(network_client, i)
-        log_message += "IP Address Created\n"
-        # statusbar.UpdateProgressMeter(updatecounter + 1, True)
-        updatecounter += 1
-        # Create Network Interface
-        create_HKSnic(network_client, i)
-        log_message += "Network Interface Created\n"
-        # statusbar.UpdateProgressMeter(updatecounter + 1, True)
-        updatecounter += 1
-        # Create Custom VM
-        create_customvm(network_client, compute_client, i)
-        log_message += "VM Created\n"
-        log_message += "-----------------------------------------------------------------"
-        # # statusbar.UpdateProgressMeter(updatecounter + 1, True)
-
-    # statusbar.HideProgressMeter()
+    #
+    # # Create the resource group
+    # create_resource_group(resource_group_client)
+    # log_message += "Created Resource Group\n\n"
+    # # statusbar.UpdateProgressMeter(updatecounter + 1, True)
+    # updatecounter += 1
+    #
+    # for i in range(int(VM_Count)):
+    #     path = GH_Path(i)
+    #     log_message += "Creating Instance " + str(i) + " ...\n"
+    #     # statusbar.UpdateProgressMeter(updatecounter +1 , True)
+    #     updatecounter += 1
+    #     # Create a public IP address
+    #     create_public_ip_address(network_client, i)
+    #     log_message += "IP Address Created\n"
+    #     # statusbar.UpdateProgressMeter(updatecounter + 1, True)
+    #     updatecounter += 1
+    #     # Create Network Interface
+    #     create_HKSnic(network_client, i)
+    #     log_message += "Network Interface Created\n"
+    #     # statusbar.UpdateProgressMeter(updatecounter + 1, True)
+    #     updatecounter += 1
+    #     # Create Custom VM
+    #     create_customvm(network_client, compute_client, i)
+    #     log_message += "VM Created\n"
+    #     log_message += "-----------------------------------------------------------------"
+    #     # # statusbar.UpdateProgressMeter(updatecounter + 1, True)
+    #
+    # # statusbar.HideProgressMeter()
     sc.sticky["Message"] = log_message
 
     print(stickyval)
