@@ -88,6 +88,7 @@ def create_HKSnic(network_client, Instance):
         nic_params
     )
     while not creation_result.done():
+        print("Creating NIC...")
         time.sleep(5)
 
     return creation_result.result()
@@ -111,7 +112,7 @@ def create_customvm(network_client, compute_client, Instance):
         },
         'storage_profile': {
             'image_reference': {
-                'id': '/subscriptions/9fe06a7b-b34d-4fe5-aea4-9c012830c497/resourceGroups/LINE_DISKIMAGES/providers/Microsoft.Compute/images/LINERadianceTemplate'
+                'id': '/subscriptions/9fe06a7b-b34d-4fe5-aea4-9c012830c497/resourceGroups/LINE_DISKIMAGES/providers/Microsoft.Compute/images/LINE_RADIANCE_IMAGE'
             }
         },
         'network_profile': {
@@ -126,6 +127,7 @@ def create_customvm(network_client, compute_client, Instance):
         vm_parameters
     )
     while not creation_result.done():
+        print("creating VM...")
         time.sleep(5)
 
     return creation_result.result()
