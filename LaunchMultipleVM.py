@@ -7,12 +7,6 @@ from azure.mgmt.network import NetworkManagementClient
 from azure.mgmt.compute.models import DiskCreateOption
 
 #General Variables
-SUBSCRIPTION_ID = '1153c71f-6990-467b-b1ec-c2ba46824d64'
-GROUP_NAME = 'AUTOBUNTU'
-LOCATION = 'southcentralus'
-VM_NAME = 'AutoBuntu'
-ADMIN_NAME = "pferrer"
-ADMIN_PSWD = "Password_001"
 
 ############################################## SUPPORTING RESOURCE SETUP ###############################################
 
