@@ -41,7 +41,6 @@ def get_credentials():
 
     return credentials
 
-
 # This Creates a resource group
 def create_resource_group(resource_group_client):
     resource_group_params = {'location': sc.sticky['Login_Info'].LOCATION}
@@ -61,6 +60,10 @@ def create_public_ip_address(network_client, Instance):
         sc.sticky['Login_Info'].GROUP_NAME + '_IPAddress_' + str(Instance),
         public_ip_addess_params
     )
+
+    while not creation_result.done():
+        time.sleep(5)
+
     return creation_result.result()
 
 # This will disassociate the public IP address from the VM after its created
