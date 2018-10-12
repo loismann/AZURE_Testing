@@ -1,7 +1,6 @@
 import time
 import datetime
 from paramiko import client
-import threading
 from Login_Info import *
 
 from azure.common.credentials import ServicePrincipalCredentials
@@ -185,7 +184,7 @@ def updateRadiancePathEntries(Instance):
 credentials = get_credentials()
 #
 # Initialize Management Clients
-resource_group_client = .ResourceManagementClient(
+resource_group_client = ResourceManagementClient(
     credentials,
     SUBSCRIPTION_ID
 )
@@ -208,8 +207,8 @@ compute_client = ComputeManagementClient(
 
 
 # Run the VM Creation Loop
-Generate_VM = False
-
+Generate_VM = True
+VM_Count = 1
 if Generate_VM:
 
 
@@ -221,7 +220,6 @@ if Generate_VM:
     log_message += "\nCreated Resource Group\n\n"
 
     for i in range(int(VM_Count)):
-        path = GH_Path(i)
         log_message += "Creating Instance " + str(i) + " ...\n"
         print("Creating Instance " + str(i) + " ...\n")
 
@@ -263,12 +261,5 @@ if Generate_VM:
         # connection.sendCommand(r"sed -i -e '$a\' -e 'MANPATH=.:/home/pferrer/ray/doc/man/:$MANPATH' /home/pferrer/.bashrc")
         # connection.sendCommand(r"sed -i -e '$a\' -e 'export PATH RAYPATH MANPATH' /home/pferrer/.bashrc")
 
-
-
-
 else:
-    print("Just Testing Stuff"
-
-
-
-
+    print("Just Testing Stuff")
