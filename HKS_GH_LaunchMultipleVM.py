@@ -126,7 +126,7 @@ def create_customvm(network_client, compute_client, Instance):
         },
         'storage_profile': {
             'image_reference': {
-                'id': '/subscriptions/9fe06a7b-b34d-4fe5-aea4-9c012830c497/resourceGroups/LINE_DISKIMAGES/providers/Microsoft.Compute/images/LINEUbuntuRadianceImage'
+                'id': '/subscriptions/9fe06a7b-b34d-4fe5-aea4-9c012830c497/resourceGroups/LINE_DISKIMAGES/providers/Microsoft.Compute/images/LINERadianceTemplate'
             }
         },
         'network_profile': {
@@ -221,57 +221,57 @@ compute_client = sc.sticky['azure.mgmt.compute'].ComputeManagementClient(
 # Run the VM Creation Loop
 if Generate_VM:
 
-    # updatecounter = 0
-    # # statusbar.ShowProgressMeter(0, ((7*VM_Count)+1), "Calculating", True, True)
-    #
-    # # Start the sticky dictionary entry
-    # log_message = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-    #
-    # # Create the resource group
-    # create_resource_group(resource_group_client)
-    # log_message += "\nCreated Resource Group\n\n"
-    # # statusbar.UpdateProgressMeter(updatecounter + 1, True)
-    # updatecounter += 1
+    updatecounter = 0
+    # statusbar.ShowProgressMeter(0, ((7*VM_Count)+1), "Calculating", True, True)
+
+    # Start the sticky dictionary entry
+    log_message = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+
+    # Create the resource group
+    create_resource_group(resource_group_client)
+    log_message += "\nCreated Resource Group\n\n"
+    # statusbar.UpdateProgressMeter(updatecounter + 1, True)
+    updatecounter += 1
 
     for i in range(int(VM_Count)):
-        # path = GH_Path(i)
-        # log_message += "Creating Instance " + str(i) + " ...\n"
-        # # statusbar.UpdateProgressMeter(updatecounter +1 , True)
-        # updatecounter += 1
-        # # Create a public IP address
-        # create_public_ip_address(network_client, i)
-        # log_message += "IP Address Created\n"
+        path = GH_Path(i)
+        log_message += "Creating Instance " + str(i) + " ...\n"
+        # statusbar.UpdateProgressMeter(updatecounter +1 , True)
+        updatecounter += 1
+        # Create a public IP address
+        create_public_ip_address(network_client, i)
+        log_message += "IP Address Created\n"
+        # statusbar.UpdateProgressMeter(updatecounter + 1, True)
+        updatecounter += 1
+        # Create Network Interface
+        create_HKSnic(network_client, i)
+        log_message += "Network Interface Created\n"
+        # statusbar.UpdateProgressMeter(updatecounter + 1, True)
+        updatecounter += 1
+        # Create Custom VM
+        create_customvm(network_client, compute_client, i)
+        log_message += "VM Created\n"
+        # Disassociate the IP address from the VM
+        disassociate_public_ip_address(network_client, i)
+        log_message += "Public IP address unlinked"
+        log_message += "--------------------------------------------\n"
         # # statusbar.UpdateProgressMeter(updatecounter + 1, True)
-        # updatecounter += 1
-        # # Create Network Interface
-        # create_HKSnic(network_client, i)
-        # log_message += "Network Interface Created\n"
-        # # statusbar.UpdateProgressMeter(updatecounter + 1, True)
-        # updatecounter += 1
-        # # Create Custom VM
-        # create_customvm(network_client, compute_client, i)
-        # log_message += "VM Created\n"
-        # # Disassociate the IP address from the VM
-        # disassociate_public_ip_address(network_client, i)
-        # log_message += "Public IP address unlinked"
-        # log_message += "--------------------------------------------\n"
-        # # # statusbar.UpdateProgressMeter(updatecounter + 1, True)
 
 
 
         # Get the private IP address of the newly created VM
-        private_IP = getPrivateIpAddress(network_client,i)
-        # Connect to the newly created VM
-        connection = ssh(private_IP,
-                         sc.sticky['Login_Info'].ADMIN_NAME,
-                         sc.sticky['Login_Info'].ADMIN_PSWD,
-                         )
+        # private_IP = getPrivateIpAddress(network_client,i)
+        # # Connect to the newly created VM
+        # connection = ssh(private_IP,
+        #                  sc.sticky['Login_Info'].ADMIN_NAME,
+        #                  sc.sticky['Login_Info'].ADMIN_PSWD,
+        #                  )
         # Update the Radiance Path entries
-        connection.sendCommand(r"sed -i -e '$a\' -e '' /home/pferrer/.bashrc")
-        connection.sendCommand(r"sed -i -e '$a\' -e 'RAYPATH=.:/usr/local/lib/:$RAYPATH' /home/pferrer/.bashrc")
-        connection.sendCommand(r"sed -i -e '$a\' -e 'PATH=.:/usr/local/bin/:$PATH' /home/pferrer/.bashrc")
-        connection.sendCommand(r"sed -i -e '$a\' -e 'MANPATH=.:/home/pferrer/ray/doc/man/:$MANPATH' /home/pferrer/.bashrc")
-        connection.sendCommand(r"sed -i -e '$a\' -e 'export PATH RAYPATH MANPATH' /home/pferrer/.bashrc")
+        # connection.sendCommand(r"sed -i -e '$a\' -e '' /home/pferrer/.bashrc")
+        # connection.sendCommand(r"sed -i -e '$a\' -e 'RAYPATH=.:/usr/local/lib/:$RAYPATH' /home/pferrer/.bashrc")
+        # connection.sendCommand(r"sed -i -e '$a\' -e 'PATH=.:/usr/local/bin/:$PATH' /home/pferrer/.bashrc")
+        # connection.sendCommand(r"sed -i -e '$a\' -e 'MANPATH=.:/home/pferrer/ray/doc/man/:$MANPATH' /home/pferrer/.bashrc")
+        # connection.sendCommand(r"sed -i -e '$a\' -e 'export PATH RAYPATH MANPATH' /home/pferrer/.bashrc")
 
 
     # statusbar.HideProgressMeter()
