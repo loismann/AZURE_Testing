@@ -223,22 +223,22 @@ if Generate_VM:
 
     for i in range(int(VM_Count)):
         log_message += "Creating Instance " + str(i) + " ...\n"
-        print("Creating Instance " + str(i) + " ...\n")
+        print("Creating Instance " + str(i) + " ...")
 
         # Create a public IP address
         create_public_ip_address(network_client, i)
         log_message += "IP Address Created\n"
-        print("IP Address Created\n")
+        print("IP Address Created")
 
         # Create Network Interface
         create_HKSnic(network_client, i)
         log_message += "Network Interface Created\n"
-        print("Network Interface Created\n")
+        print("Network Interface Created")
 
         # Create Custom VM
         create_customvm(network_client, compute_client, i)
         log_message += "VM Created\n"
-        print("VM " + str(i) + " Created\n")
+        print("VM " + str(i) + " Created")
 
         # Disassociate the IP address from the VM
         disassociate_public_ip_address(network_client, i)
