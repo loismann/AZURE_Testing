@@ -17,7 +17,7 @@ sms = SMS()
 
 # Run the VM Creation Loop
 Generate_VM = True
-VM_Count = 3
+VM_Count = 6
 if Generate_VM:
 
     # Start the sticky dictionary entry
