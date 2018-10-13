@@ -6,7 +6,7 @@ from azure.mgmt.compute import ComputeManagementClient
 from azure.mgmt.network import NetworkManagementClient
 from azure.mgmt.compute.models import DiskCreateOption
 
-from Login_Info import *
+from HELPER_Login_Info import *
 import time
 
 

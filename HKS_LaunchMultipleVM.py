@@ -1,27 +1,14 @@
 import time
 import datetime
 from paramiko import client
-from Login_Info import *
-
-from azure.common.credentials import ServicePrincipalCredentials
-from azure.mgmt.resource import ResourceManagementClient
-from azure.mgmt.compute import ComputeManagementClient
-from azure.mgmt.network import NetworkManagementClient
-from azure.mgmt.compute.models import DiskCreateOption
+from HELPER_Login_Info import *
+from HELPER_SMS import SMS
+import HELPER_Management_Clients
 
 
 
 ############################################### SUPPORTING RESOURCE SETUP ###############################################
-#
-# This gets all Active Directory credentials
-def get_credentials():
-    credentials = ServicePrincipalCredentials(
-        client_id=APPLICATION_ID,
-        secret=AUTHENTICATION_KEY,
-        tenant=DIRECTORY_ID,
-    )
 
-    return credentials
 
 # This Creates a resource group
 def create_resource_group(resource_group_client):
@@ -182,35 +169,19 @@ class ssh:
 def updateRadiancePathEntries(Instance):
     pass
 
+
+
 # # Run Code
-credentials = get_credentials()
-#
+
 # Initialize Management Clients
-resource_group_client = ResourceManagementClient(
-    credentials,
-    SUBSCRIPTION_ID
-)
-
-network_client = NetworkManagementClient(
-    credentials,
-    SUBSCRIPTION_ID
-)
-
-compute_client = ComputeManagementClient(
-    credentials,
-    SUBSCRIPTION_ID
-)
-
-# # Create tree structure to pass through the IP Addresses
-# T_IPAddress = DataTree[str]()
-# Public_IP_List = []
-
-
+mgmt = HELPER_Management_Clients.MGMT()
+# Instantiate the SMS class
+sms = SMS()
 
 
 # Run the VM Creation Loop
 Generate_VM = True
-VM_Count = 1
+VM_Count = 4
 if Generate_VM:
 
 
@@ -218,7 +189,7 @@ if Generate_VM:
     log_message = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
     # Create the resource group
-    create_resource_group(resource_group_client)
+    create_resource_group(mgmt.resource_group_client())
     log_message += "\nCreated Resource Group\n\n"
 
     for i in range(int(VM_Count)):
@@ -226,22 +197,23 @@ if Generate_VM:
         print("Creating Instance " + str(i) + " ...")
 
         # Create a public IP address
-        create_public_ip_address(network_client, i)
+        create_public_ip_address(mgmt.network_client(), i)
         log_message += "IP Address Created\n"
         print("IP Address Created")
 
         # Create Network Interface
-        create_HKSnic(network_client, i)
+        create_HKSnic(mgmt.network_client(), i)
         log_message += "Network Interface Created\n"
         print("Network Interface Created")
 
         # Create Custom VM
-        create_customvm(network_client, compute_client, i)
+        create_customvm(mgmt.network_client(), mgmt.compute_client(), i)
         log_message += "VM Created\n"
         print("VM " + str(i) + " Created")
+        sms.CreateVM(i)
 
         # Disassociate the IP address from the VM
-        disassociate_public_ip_address(network_client, i)
+        disassociate_public_ip_address(mgmt.network_client(), i)
         log_message += "Public IP address unlinked"
         log_message += "--------------------------------------------\n"
         print("Public IP address unlinked\n----------------------------------------\n")
@@ -256,12 +228,7 @@ if Generate_VM:
         #                  sc.sticky['Login_Info'].ADMIN_NAME,
         #                  sc.sticky['Login_Info'].ADMIN_PSWD,
         #                  )
-        # Update the Radiance Path entries
-        # connection.sendCommand(r"sed -i -e '$a\' -e '' /home/pferrer/.bashrc")
-        # connection.sendCommand(r"sed -i -e '$a\' -e 'RAYPATH=.:/usr/local/lib/:$RAYPATH' /home/pferrer/.bashrc")
-        # connection.sendCommand(r"sed -i -e '$a\' -e 'PATH=.:/usr/local/bin/:$PATH' /home/pferrer/.bashrc")
-        # connection.sendCommand(r"sed -i -e '$a\' -e 'MANPATH=.:/home/pferrer/ray/doc/man/:$MANPATH' /home/pferrer/.bashrc")
-        # connection.sendCommand(r"sed -i -e '$a\' -e 'export PATH RAYPATH MANPATH' /home/pferrer/.bashrc")
+
 
 else:
     print("Just Testing Stuff")

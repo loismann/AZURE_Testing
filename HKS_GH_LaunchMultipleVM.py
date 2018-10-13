@@ -3,7 +3,8 @@ import time
 import datetime
 import Grasshopper.DataTree as DataTree
 from Grasshopper.Kernel.Data import GH_Path
-# scp = sc.sticky['scp']
+import smtplib
+
 paramiko = sc.sticky['paramiko']
 client = sc.sticky['paramiko.client']
 threading = sc.sticky['threading']
@@ -129,7 +130,7 @@ def create_customvm(network_client, compute_client, Instance):
         },
         'storage_profile': {
             'image_reference': {
-                'id': '/subscriptions/9fe06a7b-b34d-4fe5-aea4-9c012830c497/resourceGroups/LINE_DISKIMAGES/providers/Microsoft.Compute/images/LINERadianceTemplate'
+                'id': '/subscriptions/9fe06a7b-b34d-4fe5-aea4-9c012830c497/resourceGroups/LINE_DISKIMAGES/providers/Microsoft.Compute/images/LINE_RADIANCE_IMAGE'
             }
         },
         'network_profile': {
@@ -194,9 +195,52 @@ class ssh:
         else:
             print("Connection not opened.")
 
-# This will add the missing path entries to the newly created vm
+# This will add the missing path entries to the newly created vm.  This may not be actually needed
 def updateRadiancePathEntries(Instance):
     pass
+
+
+# This class will initialize the Management clients
+class ManagementClients():
+
+
+# This will send an email notification
+def sendNotification(type,Instance=None):
+    if type == "Delete Resources":
+        # Send a text message
+        subject = "AZ Event"
+        email_body = "Resource Group: " + sc.sticky['Login_Info'].GROUP_NAME + "has been deleted"
+        conn = smtplib.SMTP('smtp.gmail.com', 587)
+        conn.ehlo()
+        conn.starttls()
+        conn.login(sc.sticky['Login_Info'].EMAIL_SENDER,
+                   sc.sticky['Login_Info'].EMAIL_PASSWORD,
+                   )
+        conn.sendmail(sc.sticky['Login_Info'].EMAIL_SENDER,
+                      sc.sticky['Login_Info'].RECIPIENT,
+                      'Subject:' + subject + '\n' + email_body
+                      )
+        conn.quit()
+
+    elif type == 'Create VM':
+        # Send a text message
+        subject = "AZ Event"
+        email_body = "Virtual Machine: " + Instance + "has been created"
+        conn = smtplib.SMTP('smtp.gmail.com', 587)
+        conn.ehlo()
+        conn.starttls()
+        conn.login(sc.sticky['Login_Info'].EMAIL_SENDER,
+                   sc.sticky['Login_Info'].EMAIL_PASSWORD,
+                   )
+        conn.sendmail(sc.sticky['Login_Info'].EMAIL_SENDER,
+                      sc.sticky['Login_Info'].RECIPIENT,
+                      'Subject:' + subject + '\n' + email_body
+                      )
+        conn.quit()
+
+
+
+
 
 # # Run Code
 credentials = get_credentials()

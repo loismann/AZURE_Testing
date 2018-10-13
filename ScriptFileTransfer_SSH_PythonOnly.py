@@ -3,7 +3,7 @@ import paramiko
 import time
 import scp
 import pysftp
-from Login_Info import *
+from HELPER_Login_Info import *
 
 from azure.common.credentials import ServicePrincipalCredentials
 from azure.mgmt.resource import ResourceManagementClient
