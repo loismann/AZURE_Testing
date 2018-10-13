@@ -1,4 +1,4 @@
-from HELPERS.HELPER_Login_Info import *
+from HELPER_Login_Info import *
 import smtplib
 
 # This is a SMS Notification Class
