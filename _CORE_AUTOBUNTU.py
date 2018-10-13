@@ -1,28 +1,26 @@
 import time
-import datetime
-from paramiko import client
-from HELPERS.HELPER_Login_Info import *
+
 
 
 # These are all the functions that will be used in the Autobuntu project
 
 # This Creates a resource group
-def create_resource_group(resource_group_client):
-    resource_group_params = {'location':LOCATION}
+def create_resource_group(resource_group_client,Login_Class):
+    resource_group_params = {'location':Login_Class.LOCATION}
     resource_group_result = resource_group_client.resource_groups.create_or_update(
-        GROUP_NAME,
+        Login_Class.GROUP_NAME,
         resource_group_params
     )
 
 # This creates a public IP address
-def create_public_ip_address(network_client, Instance):
+def create_public_ip_address(network_client, Instance, Login_Class):
     public_ip_addess_params = {
-        'location': LOCATION,
+        'location': Login_Class.LOCATION,
         'public_ip_allocation_method': 'Dynamic'
     }
     creation_result = network_client.public_ip_addresses.create_or_update(
-        GROUP_NAME,
-        GROUP_NAME + '_IPAddress_' + str(Instance),
+        Login_Class.GROUP_NAME,
+        Login_Class.GROUP_NAME + '_IPAddress_' + str(Instance),
         public_ip_addess_params
     )
 
@@ -32,31 +30,31 @@ def create_public_ip_address(network_client, Instance):
     return creation_result.result()
 
 # This  disassociates the public IP address from the VM after its created
-def disassociate_public_ip_address(network_client, Instance):
-    nic = network_client.network_interfaces.get(GROUP_NAME,
-                                                GROUP_NAME + '_myNic_' + str(Instance), )
+def disassociate_public_ip_address(network_client, Instance,Login_Class):
+    nic = network_client.network_interfaces.get(Login_Class.GROUP_NAME,
+                                                Login_Class.GROUP_NAME + '_myNic_' + str(Instance), )
     #https://docs.microsoft.com/en-us/python/api/azure-mgmt-network/azure.mgmt.network.v2018_08_01.models.networkinterfaceipconfiguration?view=azure-python
     #https://github.com/Azure/azure-sdk-for-python/issues/695#issuecomment-236024219
     # This will dissassocate the public ip address from the VM:
     nic.ip_configurations[0].public_ip_address = None
     # This updates the network interface that currently exists with the properties of the variable "nic" assigned above
-    network_client.network_interfaces.create_or_update(GROUP_NAME,
-                                                       GROUP_NAME + '_myNic_' + str(Instance),
+    network_client.network_interfaces.create_or_update(Login_Class.GROUP_NAME,
+                                                       Login_Class.GROUP_NAME + '_myNic_' + str(Instance),
                                                        nic)
 
 # This creates a network interface using EXISTING HKS Resources
-def create_HKSnic(network_client, Instance):
+def create_HKSnic(network_client, Instance,Login_Class):
     subnet_info = network_client.subnets.get(
-        Network_GROUP_NAME,
-        Network_VNET,
-        Network_SUBNET
+        Login_Class.Network_GROUP_NAME,
+        Login_Class.Network_VNET,
+        Login_Class.Network_SUBNET
     )
     publicIPAddress = network_client.public_ip_addresses.get(
-        GROUP_NAME,
-        GROUP_NAME + '_IPAddress_' + str(Instance),
+        Login_Class.GROUP_NAME,
+        Login_Class.GROUP_NAME + '_IPAddress_' + str(Instance),
     )
     nic_params = {
-        'location': LOCATION,
+        'location': Login_Class.LOCATION,
         'ip_configurations': [{
             'name': 'myIPConfig',
             'public_ip_address': publicIPAddress,
@@ -66,8 +64,8 @@ def create_HKSnic(network_client, Instance):
         }]
     }
     creation_result = network_client.network_interfaces.create_or_update(
-        GROUP_NAME,
-        GROUP_NAME + '_myNic_' + str(Instance),
+        Login_Class.GROUP_NAME,
+        Login_Class.GROUP_NAME + '_myNic_' + str(Instance),
         nic_params
     )
     while not creation_result.done():
@@ -77,18 +75,18 @@ def create_HKSnic(network_client, Instance):
     return creation_result.result()
 
 # This will create a CUSTOM virtual machine from an HKS specific Radiance image
-def create_customvm(network_client, compute_client, Instance):
+def create_customvm(network_client, compute_client, Instance, Login_Class):
     nic = network_client.network_interfaces.get(
-        GROUP_NAME,
-        GROUP_NAME + '_myNic_' + str(Instance),
+        Login_Class.GROUP_NAME,
+        Login_Class.GROUP_NAME + '_myNic_' + str(Instance),
     )
 
     vm_parameters = {
-        'location': LOCATION,
+        'location': Login_Class.LOCATION,
         'os_profile': {
-            'computer_name': VM_NAME + "-" + str(Instance),
-            'admin_username': ADMIN_NAME,
-            'admin_password': ADMIN_PSWD
+            'computer_name': Login_Class.VM_NAME + "-" + str(Instance),
+            'admin_username': Login_Class.ADMIN_NAME,
+            'admin_password': Login_Class.ADMIN_PSWD
         },
         'hardware_profile': {
             'vm_size': 'Standard_DS1'
@@ -105,8 +103,8 @@ def create_customvm(network_client, compute_client, Instance):
         },
     }
     creation_result = compute_client.virtual_machines.create_or_update(
-        GROUP_NAME,
-        VM_NAME + "-" + str(Instance),
+        Login_Class.GROUP_NAME,
+        Login_Class.VM_NAME + "-" + str(Instance),
         vm_parameters
     )
     while not creation_result.done():
@@ -116,16 +114,16 @@ def create_customvm(network_client, compute_client, Instance):
     return creation_result.result()
 
 # This will find the private (internal HKS) IP address for a VM
-def getPrivateIpAddress(network_client, Instance):
-    nic = network_client.network_interfaces.get(GROUP_NAME,
-                                                GROUP_NAME + '_myNic_' + str(Instance), )
+def getPrivateIpAddress(network_client, Instance,Login_Class):
+    nic = network_client.network_interfaces.get(Login_Class.GROUP_NAME,
+                                                Login_Class.GROUP_NAME + '_myNic_' + str(Instance), )
     #https://docs.microsoft.com/en-us/python/api/azure-mgmt-network/azure.mgmt.network.v2018_08_01.models.networkinterfaceipconfiguration?view=azure-python
     #https://github.com/Azure/azure-sdk-for-python/issues/695#issuecomment-236024219
-    # This will dissassocate the public ip address from the VM:
+    # This will disassocate the public ip address from the VM:
     privateIP = nic.ip_configurations[0].private_ip_address
     # This updates the network interface that currently exists with the properties of the variable "nic" assigned above
-    network_client.network_interfaces.create_or_update(GROUP_NAME,
-                                                       GROUP_NAME + '_myNic_' + str(Instance),
+    network_client.network_interfaces.create_or_update(Login_Class.GROUP_NAME,
+                                                       Login_Class.GROUP_NAME + '_myNic_' + str(Instance),
                                                        nic)
     return privateIP
 
@@ -134,8 +132,8 @@ def updateRadiancePathEntries(Instance):
     pass
 
 #Delete All the Resources
-def delete_resources(resource_group_client):
-    creation_result = resource_group_client.resource_groups.delete(GROUP_NAME)
+def delete_resources(resource_group_client,Login_Class):
+    creation_result = resource_group_client.resource_groups.delete(Login_Class.GROUP_NAME)
     while not creation_result.done():
         print("Deleting Resources...")
         time.sleep(10)
