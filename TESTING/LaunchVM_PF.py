@@ -6,18 +6,6 @@ from azure.mgmt.compute import ComputeManagementClient
 from azure.mgmt.network import NetworkManagementClient
 from azure.mgmt.compute.models import DiskCreateOption
 
-#Import module necessary for creating a managed disk
-from azure.mgmt.compute.models import DiskCreateOption
-
-
-
-#General Variables
-SUBSCRIPTION_ID = '1153c71f-6990-467b-b1ec-c2ba46824d64'
-GROUP_NAME = 'pfubuntu'
-LOCATION = 'southcentralus'
-VM_NAME = 'AutoLanuchVM'
-ADMIN_NAME = "pferrer"
-ADMIN_PSWD = "Password_001"
 
 ############################################## SUPPORTING RESOURCE SETUP ###############################################
 
@@ -175,6 +163,48 @@ def create_vm(network_client, compute_client):
 
     return creation_result.result()
 
+# This will create a CUSTOM virtual machine
+def create_customvm(network_client, compute_client):
+    nic = network_client.network_interfaces.get(
+        GROUP_NAME,
+        'myNic'
+    )
+    avset = compute_client.availability_sets.get(
+        GROUP_NAME,
+        'myAVSet'
+    )
+    vm_parameters = {
+        'location': LOCATION,
+        'os_profile': {
+            'computer_name': VM_NAME,
+            'admin_username': ADMIN_NAME,
+            'admin_password': ADMIN_PSWD
+        },
+        'hardware_profile': {
+            'vm_size': 'Standard_DS1'
+        },
+        'storage_profile': {
+            'image_reference': {
+                'id' : '/subscriptions/1153c71f-6990-467b-b1ec-c2ba46824d64/resourceGroups/Ubuntu_Radiance_LINE/providers/Microsoft.Compute/images/RadianceTemplate_LINE'
+            }
+        },
+        'network_profile': {
+            'network_interfaces': [{
+                'id': nic.id
+            }]
+        },
+        'availability_set': {
+            'id': avset.id
+        }
+    }
+    creation_result = compute_client.virtual_machines.create_or_update(
+        GROUP_NAME,
+        VM_NAME,
+        vm_parameters
+    )
+
+    return creation_result.result()
+
 # This will give information about the current VM
 def get_vm(compute_client):
     vm = compute_client.virtual_machines.get(GROUP_NAME, VM_NAME, expand='instanceView')
@@ -248,8 +278,6 @@ def update_vm(compute_client):
         vm
     )
 
-    wsgi =
-
     return update_result.result()
 
 # This will add another Data disk to the virtual machine
@@ -314,33 +342,69 @@ if __name__ == "__main__" and Run_Code:
         SUBSCRIPTION_ID
     )
 
-    # Run code to create managed disk from vhd (this should probably be in a function at some point)
-    disk_creation = compute_client.images.create_or_update(
-            GROUP_NAME,
-            "scriptedUbuntuimagepf",
-            {
-                'location': LOCATION,
-                'storage_profile': {
-                    'os_disk': {
-                        'os_type': 'Linux',
-                        'os_state': "Generalized",
-                        'blob_uri': 'https://pfubuntustorage.blob.core.windows.net/vhdfilesforimages/Ubuntu.vhd',
-                        'caching': "ReadWrite",
-                    }
-                }
-            }
-        )
-    disk_resource = disk_creation.result()
+    # Call the resource group
+    create_resource_group(resource_group_client)
+    print("Created Resource Group")
+    # Create the availability set
+    create_availability_set(compute_client)
+    print("Created Availability Set")
+    # Create a public IP address
+    create_public_ip_address(network_client)
+    # Create the virtual network
+    create_vnet(network_client)
+    print("Virtual Network Created")
+    # Add the subnet to the virtual network
+    create_subnet(network_client)
+    print("Subnet added to virtual network")
+    # Create the network interface
+    create_nic(network_client)
+    print("Network Interface Created")
+    # FINALLY Create the virtual machine
+    create_customvm(network_client, compute_client)
+    print("Virtual Machine Created")
+    # Revel in your Success
+    print("Success!!!")
 
 
 
 
+    ## Get information about the VM
+    # get_vm(compute_client)
+    # print("------------------------------------------------------")
+    # input('Info Displayed. Press enter to continue...')
 
+    ## Stop the VM
+    # stop_vm(compute_client)
+    # input('VM Stopped. Press enter to continue...')
 
+    # Deallocate the VM
+    # deallocate_vm(compute_client)
+    # input('VM Deallocated.  Press enter to continue...')
 
+    ## Start the VM back up again
+    # start_vm(compute_client)
+    # input('VM up and running again, Press enter to continue')
 
+    ## Resize the VM
+    # update_result = update_vm(compute_client)
+    # print("------------------------------------------------------")
+    # print(update_result)
+    # input('VM has been resized. Press enter to continue...')
 
-    #
+    ## Add Data Disk to VM
+    # add_result = add_datadisk(compute_client)
+    # print("------------------------------------------------------")
+    # print(add_result)
+    # input('Press enter to continue...')
+
+    ## Deallocate the VM
+    # deallocate_vm(compute_client)
+    # input('VM Deallocated.  Press enter to continue...')
+
+    ## Delete all resources
+    # delete_resources(resource_group_client)
+    # input('Resources Deleted. Press enter to continue...')
+
     print ("Revel in your success!")
 else:
     print ("Just testing stuff")

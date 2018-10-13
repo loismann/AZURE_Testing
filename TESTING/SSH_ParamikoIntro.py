@@ -1,10 +1,5 @@
 from paramiko import client
 
-# Remote Machine Information Change as needed
-Server_Address = "40.74.229.97"
-Username = "pferrer"
-Password = "Password_001"
-
 
 class ssh:
     client = None
