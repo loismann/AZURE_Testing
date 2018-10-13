@@ -1,7 +1,11 @@
 import time
 import datetime
 from paramiko import client
-from
+from HELPERS.HELPER_Login_Info import *
+
+
+# These are all the functions that will be used in the Autobuntu project
+
 
 
 # This Creates a resource group
@@ -29,7 +33,7 @@ def create_public_ip_address(network_client, Instance):
 
     return creation_result.result()
 
-# This will disassociate the public IP address from the VM after its created
+# This  disassociates the public IP address from the VM after its created
 def disassociate_public_ip_address(network_client, Instance):
     nic = network_client.network_interfaces.get(GROUP_NAME,
                                                 GROUP_NAME + '_myNic_' + str(Instance), )
@@ -42,7 +46,7 @@ def disassociate_public_ip_address(network_client, Instance):
                                                        GROUP_NAME + '_myNic_' + str(Instance),
                                                        nic)
 
-# This creates a network interface using Existing HKS Resources
+# This creates a network interface using EXISTING HKS Resources
 def create_HKSnic(network_client, Instance):
     subnet_info = network_client.subnets.get(
         Network_GROUP_NAME,
@@ -74,7 +78,7 @@ def create_HKSnic(network_client, Instance):
 
     return creation_result.result()
 
-# This will create a CUSTOM virtual machine
+# This will create a CUSTOM virtual machine from an HKS specific Radiance image
 def create_customvm(network_client, compute_client, Instance):
     nic = network_client.network_interfaces.get(
         GROUP_NAME,
@@ -162,3 +166,6 @@ class ssh:
 # This will add the missing path entries to the newly created vm
 def updateRadiancePathEntries(Instance):
     pass
+
+
+print(GROUP_NAME)
