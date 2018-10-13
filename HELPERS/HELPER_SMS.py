@@ -37,3 +37,19 @@ class SMS:
                       'Subject:' + subject + '\n' + email_body
                       )
         conn.quit()
+
+    def FoundIP(self,Instance):
+        # Send a text message
+        subject = "IP for Virtual Machine: " + str(Instance) + " has been found"
+        email_body = "IP for Virtual Machine: " + str(Instance) + " has been found"
+        conn = smtplib.SMTP('smtp.gmail.com', 587)
+        conn.ehlo()
+        conn.starttls()
+        conn.login(EMAIL_SENDER,
+                   EMAIL_PASSWORD,
+                   )
+        conn.sendmail(EMAIL_SENDER,
+                      RECIPIENT,
+                      'Subject:' + subject + '\n' + email_body
+                      )
+        conn.quit()

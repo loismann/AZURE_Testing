@@ -133,5 +133,10 @@ def getPrivateIpAddress(network_client, Instance):
 def updateRadiancePathEntries(Instance):
     pass
 
+#Delete All the Resources
+def delete_resources(resource_group_client):
+    creation_result = resource_group_client.resource_groups.delete(GROUP_NAME)
+    while not creation_result.done():
+        print("Deleting Resources...")
+        time.sleep(10)
 
-print(GROUP_NAME)
