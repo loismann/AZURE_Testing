@@ -24,6 +24,7 @@ if Delete_VMs:
     # Instantiate the SMS class
     sms = SMS()
     sms.DeleteResources(Login)
+    os.remove(os.path.join(os.getcwd(), 'HELPERS', 'Local_IP_Addresses.py'))
 
 
 else:
