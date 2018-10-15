@@ -1,4 +1,4 @@
-
+import time
 
 
 ################# These are all the functions that will be used in the Autobuntu project #######################
@@ -332,8 +332,6 @@ def update_vm(compute_client, Instance,Login_Class):
         VM_NAME,
         vm
     )
-
-    wsgi =
 
     return update_result.result()
 

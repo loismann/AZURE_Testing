@@ -1,4 +1,5 @@
 import datetime
+
 from HELPERS.HELPER_Login_Info import Login
 from HELPERS.HELPER_SMS import SMS
 import HELPERS.HELPER_Management_Clients
@@ -17,7 +18,7 @@ sms = SMS()
 
 # Run the VM Creation Loop
 Generate_VM = True
-VM_Count = 6
+VM_Count = 1
 if Generate_VM:
 
     # Start the sticky dictionary entry
