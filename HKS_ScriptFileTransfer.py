@@ -3,6 +3,7 @@ import scriptcontext as sc
 paramiko = sc.sticky['paramiko']
 import time
 scp = sc.sticky['scp']
+import subprocess
 
 
 
@@ -250,12 +251,19 @@ def fixfile(filename):
 
 
 
+
+
+
 ###########################################  RUN CODE ####################################################
 
 
 if Run:
     # Main: Get the IP addresses of the machines currently in use
     # Sub: Instantiate the Azure clients
+
+    #Main Folder Location:
+    study_folder = input("Paste Folder Location of .bat files for conversion:")
+
     resource_group_client = instantiateMgmtClient()[0]
     network_client = instantiateMgmtClient()[1]
     compute_client = instantiateMgmtClient()[2]
