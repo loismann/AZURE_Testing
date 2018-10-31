@@ -141,8 +141,8 @@ def executeBatchFiles(self, batchFileNames, maxPRuns=None, shell=True, waitingTi
             if finished == total:
                 done = True
 
-    except Exception, e:
-        print "Something went wrong: %s" % str(e)
+    except Exception as e:
+        print("Something went wrong: %s" % str(e))
 
 # Not sure the difference between this and "excecuteBatchFiles"
 def runBatchFiles(self, initBatchFileName, batchFileNames, fileNames, \
