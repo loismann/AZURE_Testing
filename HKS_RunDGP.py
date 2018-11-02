@@ -16,17 +16,27 @@ class Convert:
                 else:
                     # Go through each string looking for file paths
                     # if you find file paths, replace them with just the file name
-                    parse = line.split()
+                    parse = line.strip().split()
                     replaced = []
-                    for segment in parse:
-                        if os.path.exists(segment):
-                            replaced.append(os.path.basename(segment))
-                            print("found a file!")
-                        else:
-                            replaced.append(segment)
-                    new_line = " ".join(replaced)
-                    outfile.write(new_line + '\n')
+                    if parse:
+                        for segment in parse:
+                            if os.path.exists(segment):
+                                replaced.append(os.path.basename(segment))
+                                print("found a file!")
+                            else:
+                                replaced.append(segment)
+                        new_line = " ".join(replaced)
+                        outfile.write(new_line + '\n')
             outfile.close()
+
+    def fixfile(self,filename):
+        windows_line_ending = '\r\n'
+        linux_line_ending = '\n'
+        with open(filename, 'r') as f:
+            content = f.read()
+            content = content.replace(windows_line_ending, linux_line_ending)
+        with open(filename, 'w') as f:
+            f.write(content)
 
 
 # TODO: 2. Create Master Python file to control the Linux Operations
@@ -51,3 +61,6 @@ for root, dirs, files in os.walk(os.path.abspath(Main_Directory)):
         file_path = os.path.join(root, file)
         if file_path.endswith(".bat"):
             Convert().bat_to_sh_DGP(file_path)
+            #Convert().fixfile(file_path)
+
+
