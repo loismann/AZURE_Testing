@@ -60,6 +60,7 @@ class Convert:
 
 
 # TODO: 2. Create Master functions to control the Linux Operations
+
 # This kicks off the batch files
 def excecuteBatchFiles(batchFileNames, maxPRuns=None, shell=True, waitingTime=0.5):
     """Run a number of batch files in parallel and
@@ -115,6 +116,7 @@ def excecuteBatchFiles(batchFileNames, maxPRuns=None, shell=True, waitingTime=0.
 
     except Exception as e:
         print("Something went wrong: %s" % str(e))
+
 # This actually runs the batch files
 def RUN_BatchFiles(initBatchFileName, batchFileNames, pcompBatchFile, waitingTime=0.5, runInBackground=False):
     excecuteBatchFiles([initBatchFileName], maxPRuns=1, shell=runInBackground, waitingTime=waitingTime)
@@ -122,6 +124,7 @@ def RUN_BatchFiles(initBatchFileName, batchFileNames, pcompBatchFile, waitingTim
 
     if pcompBatchFile != "":
         os.system(pcompBatchFile)  # put all the files together
+
 # This goes through each subfolder and collects the files so they can be used as inputs in the "RUN_BatchFiles" function
 def FIND_BatchFileTypes(directory):
     # Prepare the inputs for the "run batch file" functions
@@ -148,6 +151,7 @@ def FIND_BatchFileTypes(directory):
                 batchFile_parameters["supportingBatchFiles"].append(file_path)
 
     return batchFile_parameters
+
 # This will get the number of VM's in use from the local copy of the IP Address file
 def GET_VMCount():
     vm_count = 0
@@ -163,10 +167,26 @@ def GET_VMCount():
         print("No copy of 'Local_IP_Addresses.py' found. Are VM's active?")
     return vm_count
 
+# This will get the VM IP addresses as a list
+def GET_VMIP():
+    IP_Addresses = []
+    try:
+        scriptdirectory = os.path.dirname(__file__)  # <-- Absolute path of this file
+        path = os.path.join(scriptdirectory, "HELPERS/Local_IP_Addresses.py")
+        with open(path) as IP:
+            for line in IP:
+                if "IP" in line:
+                    words = line.split()
+                    for word in words:
+                        if "IP" not in word and "=" not in word:
+                            IP_Addresses.append(word)
+    except:
+        print("No copy of 'Local_IP_Addresses.py' found. Are VM's active?")
+    return IP_Addresses
 
-#
-#
-# # TODO: 3. Copy all files over to linux
+
+
+# TODO: 3. Copy all files over to linux
 # if Run:
 #     # Main: Get the IP addresses of the machines currently in use
 #     # Sub: Instantiate the Azure clients
@@ -273,6 +293,8 @@ Main_Directory = "C:\ladybug\AzurePFGlareTesting"
 """
 # Get the IP addresses of the currently assigned VM's
 vm_count = GET_VMCount()
+vm_IP_List = GET_VMIP()
+
 # folders = (os.listdir(Main_Directory))
 # chunk_size = math.ceil(len(folders)/vm_count)
 
