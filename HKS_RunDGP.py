@@ -267,17 +267,20 @@ def GET_VMIP():
             directory tree
 """
 
+##### Various Locations for Main Direcotry dependent upon testing environment
 # Main_Directory = input("Paste Folder Location of .bat files for conversion:")
-Main_Directory = "C:\ladybug\AzurePFGlareTesting"
+# Main_Directory = "C:\ladybug\AzurePFGlareTesting"
+Main_Directory = "/Users/paulferrer/Desktop/DGP_TestFiles"
 
 # Walk the Directory and Convert the batch files
 # At the same time, isolate a copy of the rad files outside the folder structure, and then
 # delete all the other rad files encountered in the folders
-for root, dirs, files in os.walk(os.path.abspath(Main_Directory)):
-    # These variables will hold a copy of the rad files
-    mat_rad = None
-    object_rad = None
 
+# These variables will hold a copy of the rad files
+mat_rad = None
+object_rad = None
+
+for root, dirs, files in os.walk(os.path.abspath(Main_Directory)):
     for file in files:
         file_path = os.path.join(root, file)
         if file_path.endswith(".bat"):
@@ -293,6 +296,9 @@ for root, dirs, files in os.walk(os.path.abspath(Main_Directory)):
         # If the variables have already been set, remove all the rad files that are encountered
         elif file_path.endswith(".rad"):
             os.remove(file_path)
+
+print(mat_rad)
+print(object_rad)
 
 
 
