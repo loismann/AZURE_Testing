@@ -19,7 +19,7 @@ class Convert:
     def bat_to_sh_DGP(self, file_path):
         sh_file = file_path[:-4] + '.sh'
         with open(file_path, 'r') as infile, open(sh_file, 'w') as outfile:
-            outfile.write('#!/usr/bin/env bash\n\n')
+            outfile.write('#!/usr/bin/env bash\n')
             for i,line in enumerate(infile):
                 if i <4:
                     pass
@@ -30,6 +30,8 @@ class Convert:
                     replaced = []
                     if parse:
                         for segment in parse:
+                            if "del" in segment:
+                                replaced.append("rm")
                             if os.path.exists(segment):
                                 found_a_file = segment
                                 if ".rad" and "material" in found_a_file:
@@ -41,6 +43,7 @@ class Convert:
                                 else:
                                     replaced.append(os.path.basename(segment))
                                 # print("found a file!")
+
                             else:
                                 replaced.append(segment)
 
@@ -49,8 +52,8 @@ class Convert:
             outfile.close()
 
     # This removes carriage returns (thanks sarith)
-    def sarithFixFile(self):
-        for fname in os.listdir(os.getcwd()):
+    def sarithFixFile(self, directory):
+        for root, dir, fname in os.walk(directory):
             if ".sh" in fname and "new" not in fname:
                 name, ext = os.path.splitext(fname)
                 newname = name + "new." + ext
@@ -60,19 +63,6 @@ class Convert:
                             f2.write(lines.strip() + '\n')
                         print(list(lines))
                 os.rename(newname, fname)
-
-    # This doesnt really do anything!
-    def fixfile(self,filename):
-        windows_line_ending = '\r\n'
-        linux_line_ending = '\n'
-        with open(filename, 'r') as f:
-            content = f.read()
-            content = content.replace(windows_line_ending, linux_line_ending)
-        with open(filename, 'w') as f:
-            f.write(content)
-
-
-# TODO: 2. Create Master functions to control the Linux Operations
 
 # This kicks off the batch files
 def excecuteBatchFiles(batchFileNames, maxPRuns=None, shell=True, waitingTime=0.5):
@@ -130,41 +120,6 @@ def excecuteBatchFiles(batchFileNames, maxPRuns=None, shell=True, waitingTime=0.
     except Exception as e:
         print("Something went wrong: %s" % str(e))
 
-# This actually runs the batch files
-def RUN_BatchFiles(initBatchFileName, batchFileNames, pcompBatchFile, waitingTime=0.5, runInBackground=False):
-    excecuteBatchFiles([initBatchFileName], maxPRuns=1, shell=runInBackground, waitingTime=waitingTime)
-    excecuteBatchFiles(batchFileNames, maxPRuns=len(batchFileNames), shell=runInBackground, waitingTime=waitingTime)
-
-    if pcompBatchFile != "":
-        os.system(pcompBatchFile)  # put all the files together
-
-# This goes through each subfolder and collects the files so they can be used as inputs in the "RUN_BatchFiles" function
-def FIND_BatchFileTypes(directory):
-    # Prepare the inputs for the "run batch file" functions
-    batchFile_parameters = {}
-    batchFile_parameters['supportingBatchFiles'] = []
-
-    for root, dirs, files in os.walk(os.path.abspath(directory)):
-        for file in files:
-            file_path = os.path.join(root, file)
-
-            # If it runs across a pcomp file, add it to the dictionary
-            if file_path.endswith(".sh") and "PCOMP" in file_path:
-                # print("found the precomp file")
-                batchFile_parameters["pcompBatchFile"] = file_path
-
-            # If it runs across an init file, add it to the dictionary
-            elif file_path.endswith(".sh") and "Init" in file_path:
-                # print("found the init file")
-                batchFile_parameters["initBatchFileName"] = file_path
-
-            # When it runs across any other sh files in the directory add them too
-            elif file_path.endswith(".sh"):
-                # print("found a supporting file")
-                batchFile_parameters["supportingBatchFiles"].append(file_path)
-
-    return batchFile_parameters
-
 # This will get the number of VM's in use from the local copy of the IP Address file
 def GET_VMCount():
     vm_count = 0
@@ -204,13 +159,14 @@ def prepareFileTransfer(Local_Main_Directory):
     object_rad = None
     Rad_Files_For_Transfer = []
 
+    convert = Convert()
     for root, dirs, files in os.walk(os.path.abspath(Local_Main_Directory)):
         for file in files:
             file_path = os.path.join(root, file)
             if file_path.endswith(".bat"):
-                Convert().bat_to_sh_DGP(file_path)
-                Convert().sarithFixFile()
-                os.remove(file_path)
+                convert.bat_to_sh_DGP(file_path)
+                convert.sarithFixFile(Local_Main_Directory)
+                # os.remove(file_path)
             # This will set the rad variables to the first copy of the rad files encountered
             elif (mat_rad == None or object_rad == None) and file_path.endswith(".rad"):
                 if "material" in file_path:
@@ -229,23 +185,6 @@ def prepareFileTransfer(Local_Main_Directory):
     Rad_Files_For_Transfer.append(moved2)
 
     return Rad_Files_For_Transfer
-
-
-
-# TODO: 3. Copy all files over to linux
-
-# # TODO: 4. Run the Master Python file to create and manage jobs
-# ##### Run Code
-# if __name__ == "__main__":
-#     # Get the main directory we're working in
-#     Main_Directory = "/home/pferrer"
-#     # Find the different inputs for running the batch files
-#     params = FIND_BatchFileTypes(Main_Directory)
-#     print(params)
-#
-#     # print(params.get('pcompBatchFile'))
-#     # Deep Breath.... Run all the batch files
-#     RUN_BatchFiles(params.get('initBatchFileName'),params.get('supportingBatchFiles'), params.get('pcompBatchFile'))
 
 
 
