@@ -299,9 +299,9 @@ def prepareFileTransfer(Local_Main_Directory):
 """
 
 ##### Various Locations for Main Direcotry dependent upon testing environment
-# Main_Directory = input("Paste Folder Location of .bat files for conversion:")
-# Main_Directory = "C:\ladybug\AzurePFGlareTesting"
-Local_Main_Directory = "/Users/paulferrer/Desktop/DGP_TestFiles"
+# Local_Main_Directory = input("Paste Folder Location of .bat files for conversion:")
+Local_Main_Directory = r"C:\Users\pferrer\Desktop\test"
+# Local_Main_Directory = "/Users/paulferrer/Desktop/DGP_TestFiles"
 Azure_Main_Directory = "/home/pferrer/new"
 
 # Walk the Directory and Convert the batch files
