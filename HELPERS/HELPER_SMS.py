@@ -53,3 +53,19 @@ class SMS:
                       'Subject:' + subject + '\n' + email_body
                       )
         conn.quit()
+
+    def DGPfilesCopiedToCloud(self,Instance,Login_Class):
+        # Send a text message
+        subject = "DGP Resource Files for VM: " + str(Instance) + " have been copied to Azure"
+        email_body = "DGP Resource Files for VM: " + str(Instance) + " have been copied to Azure"
+        conn = smtplib.SMTP('smtp.gmail.com', 587)
+        conn.ehlo()
+        conn.starttls()
+        conn.login(Login_Class.EMAIL_SENDER,
+                   Login_Class.EMAIL_PASSWORD,
+                   )
+        conn.sendmail(Login_Class.EMAIL_SENDER,
+                      Login_Class.RECIPIENT,
+                      'Subject:' + subject + '\n' + email_body
+                      )
+        conn.quit()

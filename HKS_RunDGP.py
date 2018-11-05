@@ -6,6 +6,7 @@ from collections import defaultdict
 from HELPERS.HELPER_SSH import pf_ssh
 import shutil
 from HELPERS.HELPER_Login_Info import Login
+import HELPERS.HELPER_SMS as sms
 
 
 
@@ -30,10 +31,19 @@ class Convert:
                     if parse:
                         for segment in parse:
                             if os.path.exists(segment):
-                                replaced.append(os.path.basename(segment))
-                                print("found a file!")
+                                found_a_file = segment
+                                if ".rad" and "material" in found_a_file:
+                                    redirection = "../Materials.rad"
+                                    replaced.append(redirection)
+                                elif ".rad" in found_a_file and "material" not in found_a_file:
+                                    redirection = "../Objects.rad"
+                                    replaced.append(redirection)
+                                else:
+                                    replaced.append(os.path.basename(segment))
+                                # print("found a file!")
                             else:
                                 replaced.append(segment)
+
                         new_line = " ".join(replaced)
                         outfile.write(new_line + '\n')
             outfile.close()
@@ -192,6 +202,7 @@ def prepareFileTransfer(Local_Main_Directory):
     # These variables will hold a copy of the rad files
     mat_rad = None
     object_rad = None
+    Rad_Files_For_Transfer = []
 
     for root, dirs, files in os.walk(os.path.abspath(Local_Main_Directory)):
         for file in files:
@@ -201,7 +212,7 @@ def prepareFileTransfer(Local_Main_Directory):
                 Convert().sarithFixFile()
                 os.remove(file_path)
             # This will set the rad variables to the first copy of the rad files encountered
-            elif mat_rad == None or object_rad == None and file_path.endswith(".rad"):
+            elif (mat_rad == None or object_rad == None) and file_path.endswith(".rad"):
                 if "material" in file_path:
                     mat_rad = file_path
                 else:
@@ -210,72 +221,19 @@ def prepareFileTransfer(Local_Main_Directory):
             elif file_path.endswith(".rad"):
                 os.remove(file_path)
 
-    shutil.move(mat_rad, Local_Main_Directory)
-    shutil.move(object_rad, Local_Main_Directory)
-    # print(mat_rad)
-    # print(object_rad)
+    moved1 = os.path.join(Local_Main_Directory, "Materials.rad")
+    moved2 = os.path.join(Local_Main_Directory, "Objects.rad")
+    os.rename(shutil.move(mat_rad, Local_Main_Directory), moved1 )
+    os.rename(shutil.move(object_rad, Local_Main_Directory), moved2)
+    Rad_Files_For_Transfer.append(moved1)
+    Rad_Files_For_Transfer.append(moved2)
+
+    return Rad_Files_For_Transfer
 
 
 
 # TODO: 3. Copy all files over to linux
-# if Run:
-#     # Main: Get the IP addresses of the machines currently in use
-#     # Sub: Instantiate the Azure clients
-#
-#     #Main Folder Location:
-#     study_folder = input("Paste Folder Location of .bat files for conversion:")
-#
-#     resource_group_client = instantiateMgmtClient()[0]
-#     network_client = instantiateMgmtClient()[1]
-#     compute_client = instantiateMgmtClient()[2]
-#
-#     # Sub: Find the resource group that the user created
-#     myresource_group = None
-#     for item in resource_group_client.resource_groups.list():
-#         if "AUTOBUNTU" in str(item):
-#             myresource_group = item.name
-#
-#     # Main: List of IP addresses
-#     privateIpAddresses = []
-#     for i in range(VM_Count):
-#         privateIP = getPrivateIpAddress(network_client, i)
-#         privateIpAddresses.append(privateIP)
-#     print(privateIpAddresses)
-#
-#     # Main: Find the directory where all the batch files are written
-#     # Sub: Go through all the folders and files in the simulation folder
-#     for root, dirs, files in os.walk(os.path.abspath(study_folder)):
-#         for file in files:
-#             file_path = os.path.join(root, file)
-#             if file_path.endswith(".bat"):
-#                 # print file_path
-#                 bat_to_sh(file_path)
-#
-#     # For the Glare analysis, figure out how many simulation folders need to go to each machine
-#     # This will be the total number of hours being run divided by the total number of VM instances
-#
-#     # Connect to virtual machine and Copy over Base Project files
-#     for i in range(VM_Count):
-#         for root, dirs, files in os.walk(os.path.abspath(study_folder)):
-#             for file in files:
-#                 # print file
-#                 original_file_path = os.path.join(root, file)
-#                 if not original_file_path.endswith(".bat"):
-#                     # print original_file_path
-#                     destination_file_path = "/home/pferrer/" + file
-#                     # print destination_file_path
-#                     fixfile(original_file_path)
-#                     copyfilesSCP(privateIpAddresses[i],
-#                                   22,
-#                                   sc.sticky['Login_Info'].ADMIN_NAME,
-#                                   sc.sticky['Login_Info'].ADMIN_PSWD,
-#                                   original_file_path,
-#                                   destination_file_path,
-#                                   )
-#     print("Files Copied")
-#
-#
-#
+
 # # TODO: 4. Run the Master Python file to create and manage jobs
 # ##### Run Code
 # if __name__ == "__main__":
@@ -307,12 +265,7 @@ Azure_Main_Directory = "/home/pferrer/new"
 # Walk the Directory and Convert the batch files
 # At the same time, isolate a copy of the rad files outside the folder structure, and then
 # delete all the other rad files encountered in the folders
-# prepareFileTransfer(Local_Main_Directory)
-
-
-
-
-
+Rad_Files_For_Transfer = prepareFileTransfer(Local_Main_Directory)
 
 """ Step 3: figure out how to copy over the files to the vm:
             Identify how many VMs there are
@@ -323,77 +276,42 @@ Azure_Main_Directory = "/home/pferrer/new"
 # Get the count and IP addresses of the currently assigned VM's
 vm_count = GET_VMCount()
 vm_IP_List = GET_VMIP()
-Rad_Files_For_Transfer = []
 
-
+# Get number of sim hours that will go to each VM
 directory_contents = sorted([f for f in os.listdir(Local_Main_Directory) if not f.startswith('.')], key=lambda f: f.lower())
-for item in directory_contents:
-    if "rad" in item:
-     directory_contents.remove(item)
-     Rad_Files_For_Transfer.append(item)
 chunk_size = math.ceil(len(directory_contents) / vm_count)
 
 # Look more into how this works, but this will split the folder names into even chunks based on the number of VMs
 # https://stackoverflow.com/questions/312443/how-do-you-split-a-list-into-evenly-sized-chunks
 divideIntoMachineGroups = [directory_contents[i:i + chunk_size] for i in range(0, len(directory_contents), chunk_size)]
 
-login = Login()
-ssh = pf_ssh()
-
+sms = sms.SMS()
 for i in range(vm_count):
-    login[i] = Login()
     Folders_To_Send = divideIntoMachineGroups[i]
     IP = vm_IP_List[i]
+    print("Machine " + str(i))
+    login = Login()
+    ssh = pf_ssh(IP,22, login.ADMIN_NAME, login.ADMIN_PSWD)
     ssh.sendCommand("mkdir new")
+    for radfile in Rad_Files_For_Transfer:
+        original_file_path = os.path.abspath(radfile)
+        destination_file_path = Azure_Main_Directory + r"/" + os.path.split(original_file_path)[1]
+        ssh.copyfilesSCP(IP,22,login.ADMIN_NAME,login.ADMIN_PSWD,original_file_path,destination_file_path)
+
     # Iterate through each folder and send the contents
     for folder in Folders_To_Send:
-        print("CURRENT FOLDER IS: " + folder)
-        # print(os.path.join(Local_Main_Directory,folder))
+        folderobject = os.path.join(Local_Main_Directory,folder)
+        if os.path.isdir(folderobject):
+            print("CURRENT FOLDER IS: " + folder)
         for root,dirs,files in os.walk(os.path.join(Local_Main_Directory,folder)):
-                for file in files:
-                    if not file == ".DS_Store":
-                        # print(file)
-                        original_file_path = os.path.join(root,file)
-                        destination_file_path = os.path.join(Azure_Main_Directory,file)
-                        ssh.copyfilesSCP(IP,22,login.ADMIN_NAME,login.ADMIN_PSWD,original_file_path,destination_file_path)
-                        print("Copied A file...I hope")
+            for file in files:
+                if not file == ".DS_Store" and not file.endswith(".rad"):
+                    print(file)
+                    original_file_path = os.path.join(root,file)
+                    ssh.sendCommand("mkdir ./new/" + folder)
+                    destination_file_path = Azure_Main_Directory + r"/" + folder + r"/" + file
+                    ssh.copyfilesSCP(IP,22,login.ADMIN_NAME,login.ADMIN_PSWD,original_file_path,destination_file_path)
         print()
-    print()
-    print()
-    print()
-    print("Switching to next machine")
 
-    #     for i in range(VM_Count):
-    #         for root, dirs, files in os.walk(os.path.abspath(study_folder)):
-    #             for file in files:
-    #                 # print file
-    #                 original_file_path = os.path.join(root, file)
-    #                 if not original_file_path.endswith(".bat"):
-    #                     # print original_file_path
-    #                     destination_file_path = "/home/pferrer/" + file
-    #                     # print destination_file_path
-    #                     fixfile(original_file_path)
-    #                     copyfilesSCP(privateIpAddresses[i],
-    #                                   22,
-    #                                   sc.sticky['Login_Info'].ADMIN_NAME,
-    #                                   sc.sticky['Login_Info'].ADMIN_PSWD,
-    #                                   original_file_path,
-    #                                   destination_file_path,
-    #                                   )
-    #     print("Files Copied")
-
-    # Send the rad files
-
-
-
-
-
-# folder_split = {}
-# for i in range(vm_count):
-#     folder_split["FolderGroup_" + str(i)] = []
-#
-# for i in range(len(os.listdir(Main_Directory))):
-#     print(i)
-#
-# print(folder_split)
-#
+    sms.DGPfilesCopiedToCloud(i,login)
+    print("\n\n")

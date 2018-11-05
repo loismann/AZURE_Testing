@@ -1,6 +1,6 @@
 import paramiko
 import scp
-from paramiko import client
+import paramiko
 
 
 
@@ -8,16 +8,16 @@ from paramiko import client
 class pf_ssh:
     client = None
 
-    def __init__(self,address,username,password):
+    def __init__(self,address,port,username,password):
         # Let the user know we're connecting to the server
         print("Connecting to server...")
         # Create a new SSH client
-        self.client = client.SSHClient()
+        self.client = paramiko.SSHClient()
         # The following line is required if you want to script to be able to access a server thats not yet in the known_hosts file
 
         self.client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
         # Make the connection
-        self.client.connect(address,username,password,look_for_keys=False)
+        self.client.connect(address,port,username,password)
 
 
     def sendCommand(self,command):
