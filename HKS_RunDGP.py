@@ -4,6 +4,7 @@ import time
 import math
 from collections import defaultdict
 from HELPERS.HELPER_SSH import ssh
+import shutil
 
 
 # TODO: 1. Convert batch files to shell files
@@ -288,7 +289,7 @@ for root, dirs, files in os.walk(os.path.abspath(Main_Directory)):
             Convert().sarithFixFile()
             os.remove(file_path)
         # This will set the rad variables to the first copy of the rad files encountered
-        elif mat_rad == None and object_rad == None and file_path.endswith(".rad"):
+        elif mat_rad == None or object_rad == None and file_path.endswith(".rad"):
             if "material" in file_path:
                 mat_rad = file_path
             else:
@@ -297,8 +298,10 @@ for root, dirs, files in os.walk(os.path.abspath(Main_Directory)):
         elif file_path.endswith(".rad"):
             os.remove(file_path)
 
-print(mat_rad)
-print(object_rad)
+shutil.move(mat_rad,Main_Directory)
+shutil.move(object_rad,Main_Directory)
+# print(mat_rad)
+# print(object_rad)
 
 
 
