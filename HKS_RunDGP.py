@@ -3,8 +3,10 @@ import os
 import time
 import math
 from collections import defaultdict
-from HELPERS.HELPER_SSH import ssh
+from HELPERS.HELPER_SSH import pf_ssh
 import shutil
+from HELPERS.HELPER_Login_Info import Login
+
 
 
 # TODO: 1. Convert batch files to shell files
@@ -185,6 +187,34 @@ def GET_VMIP():
         print("No copy of 'Local_IP_Addresses.py' found. Are VM's active?")
     return IP_Addresses
 
+# This will convert batch files and strip/reposition rad files
+def prepareFileTransfer(Local_Main_Directory):
+    # These variables will hold a copy of the rad files
+    mat_rad = None
+    object_rad = None
+
+    for root, dirs, files in os.walk(os.path.abspath(Local_Main_Directory)):
+        for file in files:
+            file_path = os.path.join(root, file)
+            if file_path.endswith(".bat"):
+                Convert().bat_to_sh_DGP(file_path)
+                Convert().sarithFixFile()
+                os.remove(file_path)
+            # This will set the rad variables to the first copy of the rad files encountered
+            elif mat_rad == None or object_rad == None and file_path.endswith(".rad"):
+                if "material" in file_path:
+                    mat_rad = file_path
+                else:
+                    object_rad = file_path
+            # If the variables have already been set, remove all the rad files that are encountered
+            elif file_path.endswith(".rad"):
+                os.remove(file_path)
+
+    shutil.move(mat_rad, Local_Main_Directory)
+    shutil.move(object_rad, Local_Main_Directory)
+    # print(mat_rad)
+    # print(object_rad)
+
 
 
 # TODO: 3. Copy all files over to linux
@@ -271,37 +301,14 @@ def GET_VMIP():
 ##### Various Locations for Main Direcotry dependent upon testing environment
 # Main_Directory = input("Paste Folder Location of .bat files for conversion:")
 # Main_Directory = "C:\ladybug\AzurePFGlareTesting"
-Main_Directory = "/Users/paulferrer/Desktop/DGP_TestFiles"
+Local_Main_Directory = "/Users/paulferrer/Desktop/DGP_TestFiles"
+Azure_Main_Directory = "/home/pferrer/new"
 
 # Walk the Directory and Convert the batch files
 # At the same time, isolate a copy of the rad files outside the folder structure, and then
 # delete all the other rad files encountered in the folders
+# prepareFileTransfer(Local_Main_Directory)
 
-# These variables will hold a copy of the rad files
-mat_rad = None
-object_rad = None
-
-for root, dirs, files in os.walk(os.path.abspath(Main_Directory)):
-    for file in files:
-        file_path = os.path.join(root, file)
-        if file_path.endswith(".bat"):
-            Convert().bat_to_sh_DGP(file_path)
-            Convert().sarithFixFile()
-            os.remove(file_path)
-        # This will set the rad variables to the first copy of the rad files encountered
-        elif mat_rad == None or object_rad == None and file_path.endswith(".rad"):
-            if "material" in file_path:
-                mat_rad = file_path
-            else:
-                object_rad = file_path
-        # If the variables have already been set, remove all the rad files that are encountered
-        elif file_path.endswith(".rad"):
-            os.remove(file_path)
-
-shutil.move(mat_rad,Main_Directory)
-shutil.move(object_rad,Main_Directory)
-# print(mat_rad)
-# print(object_rad)
 
 
 
@@ -316,14 +323,67 @@ shutil.move(object_rad,Main_Directory)
 # Get the count and IP addresses of the currently assigned VM's
 vm_count = GET_VMCount()
 vm_IP_List = GET_VMIP()
+Rad_Files_For_Transfer = []
 
-# folders = (os.listdir(Main_Directory))
-# chunk_size = math.ceil(len(folders)/vm_count)
 
-# # Look more into how this works, but this will split the folder names into even chunks based on the number of VMs
-# # https://stackoverflow.com/questions/312443/how-do-you-split-a-list-into-evenly-sized-chunks
-# blah = [folders[i:i + chunk_size] for i in range(0, len(folders), chunk_size)]
-# print(blah)
+directory_contents = sorted([f for f in os.listdir(Local_Main_Directory) if not f.startswith('.')], key=lambda f: f.lower())
+for item in directory_contents:
+    if "rad" in item:
+     directory_contents.remove(item)
+     Rad_Files_For_Transfer.append(item)
+chunk_size = math.ceil(len(directory_contents) / vm_count)
+
+# Look more into how this works, but this will split the folder names into even chunks based on the number of VMs
+# https://stackoverflow.com/questions/312443/how-do-you-split-a-list-into-evenly-sized-chunks
+divideIntoMachineGroups = [directory_contents[i:i + chunk_size] for i in range(0, len(directory_contents), chunk_size)]
+
+login = Login()
+ssh = pf_ssh()
+
+for i in range(vm_count):
+    login[i] = Login()
+    Folders_To_Send = divideIntoMachineGroups[i]
+    IP = vm_IP_List[i]
+    ssh.sendCommand("mkdir new")
+    # Iterate through each folder and send the contents
+    for folder in Folders_To_Send:
+        print("CURRENT FOLDER IS: " + folder)
+        # print(os.path.join(Local_Main_Directory,folder))
+        for root,dirs,files in os.walk(os.path.join(Local_Main_Directory,folder)):
+                for file in files:
+                    if not file == ".DS_Store":
+                        # print(file)
+                        original_file_path = os.path.join(root,file)
+                        destination_file_path = os.path.join(Azure_Main_Directory,file)
+                        ssh.copyfilesSCP(IP,22,login.ADMIN_NAME,login.ADMIN_PSWD,original_file_path,destination_file_path)
+                        print("Copied A file...I hope")
+        print()
+    print()
+    print()
+    print()
+    print("Switching to next machine")
+
+    #     for i in range(VM_Count):
+    #         for root, dirs, files in os.walk(os.path.abspath(study_folder)):
+    #             for file in files:
+    #                 # print file
+    #                 original_file_path = os.path.join(root, file)
+    #                 if not original_file_path.endswith(".bat"):
+    #                     # print original_file_path
+    #                     destination_file_path = "/home/pferrer/" + file
+    #                     # print destination_file_path
+    #                     fixfile(original_file_path)
+    #                     copyfilesSCP(privateIpAddresses[i],
+    #                                   22,
+    #                                   sc.sticky['Login_Info'].ADMIN_NAME,
+    #                                   sc.sticky['Login_Info'].ADMIN_PSWD,
+    #                                   original_file_path,
+    #                                   destination_file_path,
+    #                                   )
+    #     print("Files Copied")
+
+    # Send the rad files
+
 
 
 
