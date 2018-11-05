@@ -271,18 +271,31 @@ def GET_VMIP():
 Main_Directory = "C:\ladybug\AzurePFGlareTesting"
 
 # Walk the Directory and Convert the batch files
-# for root, dirs, files in os.walk(os.path.abspath(Main_Directory)):
-#     # These variables will hold a copy of the rad files
-#     mat_rad = None
-#     object_rad = None
-#
-#     for file in files:
-#         file_path = os.path.join(root, file)
-#         if file_path.endswith(".bat"):
-#             Convert().bat_to_sh_DGP(file_path)
-#             Convert().sarithFixFile()
-#             os.remove(file_path)
-#         if
+# At the same time, isolate a copy of the rad files outside the folder structure, and then
+# delete all the other rad files encountered in the folders
+for root, dirs, files in os.walk(os.path.abspath(Main_Directory)):
+    # These variables will hold a copy of the rad files
+    mat_rad = None
+    object_rad = None
+
+    for file in files:
+        file_path = os.path.join(root, file)
+        if file_path.endswith(".bat"):
+            Convert().bat_to_sh_DGP(file_path)
+            Convert().sarithFixFile()
+            os.remove(file_path)
+        # This will set the rad variables to the first copy of the rad files encountered
+        elif mat_rad == None and object_rad == None and file_path.endswith(".rad"):
+            if "material" in file_path:
+                mat_rad = file_path
+            else:
+                object_rad = file_path
+        # If the variables have already been set, remove all the rad files that are encountered
+        elif file_path.endswith(".rad"):
+            os.remove(file_path)
+
+
+
 
 
 """ Step 3: figure out how to copy over the files to the vm:
@@ -291,7 +304,7 @@ Main_Directory = "C:\ladybug\AzurePFGlareTesting"
             Divide the number of hourly directories by the number of vm's
             and send each group of directories to the correct VM
 """
-# Get the IP addresses of the currently assigned VM's
+# Get the count and IP addresses of the currently assigned VM's
 vm_count = GET_VMCount()
 vm_IP_List = GET_VMIP()
 
