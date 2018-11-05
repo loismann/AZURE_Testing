@@ -18,7 +18,7 @@ sms = SMS()
 
 # Run the VM Creation Loop
 Generate_VM = True
-VM_Count = 1
+VM_Count = 2
 if Generate_VM:
 
     # Start the sticky dictionary entry
@@ -50,6 +50,8 @@ if Generate_VM:
         log_message += "VM Created\n"
         print("VM " + str(i) + " Created")
         sms.CreateVM(i,Login)
+
+        # Connect to the machine and add the "man" Location from the usr folder
 
         # Disassociate the IP address from the VM
         core.disassociate_public_ip_address(mgmt.network_client(Login), i, Login)

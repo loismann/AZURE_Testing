@@ -59,8 +59,6 @@ class Convert:
             f.write(content)
 
 
-
-
 # TODO: 2. Create Master functions to control the Linux Operations
 # This kicks off the batch files
 def excecuteBatchFiles(batchFileNames, maxPRuns=None, shell=True, waitingTime=0.5):
@@ -150,6 +148,21 @@ def FIND_BatchFileTypes(directory):
                 batchFile_parameters["supportingBatchFiles"].append(file_path)
 
     return batchFile_parameters
+# This will get the number of VM's in use from the local copy of the IP Address file
+def GET_VMCount():
+    vm_count = 0
+    try:
+        scriptdirectory = os.path.dirname(__file__)  # <-- Absolute path of this file
+        path = os.path.join(scriptdirectory, "HELPERS/Local_IP_Addresses.py")
+        with open(path) as IP:
+            for line in IP:
+                if "IP" in line:
+                    vm_count += 1
+
+    except:
+        print("No copy of 'Local_IP_Addresses.py' found. Are VM's active?")
+    return vm_count
+
 
 #
 #
@@ -236,13 +249,21 @@ def FIND_BatchFileTypes(directory):
 
 # Main_Directory = input("Paste Folder Location of .bat files for conversion:")
 Main_Directory = "C:\ladybug\AzurePFGlareTesting"
+
+# Walk the Directory and Convert the batch files
 # for root, dirs, files in os.walk(os.path.abspath(Main_Directory)):
+#     # These variables will hold a copy of the rad files
+#     mat_rad = None
+#     object_rad = None
+#
 #     for file in files:
 #         file_path = os.path.join(root, file)
 #         if file_path.endswith(".bat"):
 #             Convert().bat_to_sh_DGP(file_path)
 #             Convert().sarithFixFile()
 #             os.remove(file_path)
+#         if
+
 
 """ Step 3: figure out how to copy over the files to the vm:
             Identify how many VMs there are
@@ -251,20 +272,14 @@ Main_Directory = "C:\ladybug\AzurePFGlareTesting"
             and send each group of directories to the correct VM
 """
 # Get the IP addresses of the currently assigned VM's
-with open("Local_IP_Addresses.py") as IP:
-    for line in IP:
-        print(line)
-        # if "IP" in line:
-        #     print(line)
+vm_count = GET_VMCount()
+# folders = (os.listdir(Main_Directory))
+# chunk_size = math.ceil(len(folders)/vm_count)
 
-folders = (os.listdir(Main_Directory))
-vm_count = 2
-chunk_size = math.ceil(len(folders)/vm_count)
-
-# Look more into how this works, but this will split the folder names into even chunks based on the number of VMs
-# https://stackoverflow.com/questions/312443/how-do-you-split-a-list-into-evenly-sized-chunks
-blah = [folders[i:i + chunk_size] for i in range(0, len(folders), chunk_size)]
-print(blah)
+# # Look more into how this works, but this will split the folder names into even chunks based on the number of VMs
+# # https://stackoverflow.com/questions/312443/how-do-you-split-a-list-into-evenly-sized-chunks
+# blah = [folders[i:i + chunk_size] for i in range(0, len(folders), chunk_size)]
+# print(blah)
 
 
 
