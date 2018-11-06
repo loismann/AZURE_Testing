@@ -166,7 +166,7 @@ def prepareFileTransfer(Local_Main_Directory):
             if file_path.endswith(".bat"):
                 convert.bat_to_sh_DGP(file_path)
                 convert.sarithFixFile(Local_Main_Directory)
-                # os.remove(file_path)
+                os.remove(file_path)
             # This will set the rad variables to the first copy of the rad files encountered
             elif (mat_rad == None or object_rad == None) and file_path.endswith(".rad"):
                 if "material" in file_path:
@@ -197,8 +197,8 @@ def prepareFileTransfer(Local_Main_Directory):
 
 ##### Various Locations for Main Direcotry dependent upon testing environment
 # Local_Main_Directory = input("Paste Folder Location of .bat files for conversion:")
-Local_Main_Directory = r"C:\Users\pferrer\Desktop\test"
-# Local_Main_Directory = "/Users/paulferrer/Desktop/DGP_TestFiles"
+# Local_Main_Directory = r"C:\Users\pferrer\Desktop\test"
+Local_Main_Directory = "/Users/paulferrer/Desktop/DGP_TestFiles"
 Azure_Main_Directory = "/home/pferrer/new"
 
 # Walk the Directory and Convert the batch files
