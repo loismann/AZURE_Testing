@@ -59,7 +59,8 @@ def excecuteBatchFiles(batchFileNames, maxPRuns=None, shell=True, waitingTime=0.
                 done = True
 
     except Exception as e:
-        print("Something went wrong: %s" % str(e))
+        pass
+        # print("Something went wrong: %s" % str(e))
 
 # This actuall runs the batch files
 def RUN_BatchFiles(initBatchFileName, batchFileNames, pcompBatchFile, waitingTime=0.5, runInBackground=False):
@@ -68,6 +69,23 @@ def RUN_BatchFiles(initBatchFileName, batchFileNames, pcompBatchFile, waitingTim
 
     if pcompBatchFile != "":
         os.system(pcompBatchFile)  # put all the files together
+
+# Strip the files...again
+def SarithFileStrip(fname):
+    if fname.endswith(".sh"):
+        name, ext = os.path.splitext(fname)
+        newname = name + "new." + ext
+        with open(fname) as f, open(newname, "w") as f2:
+            for lines in f:
+                if lines.strip():
+                    f2.write(lines.strip() + '\n')
+                # print(list(lines))
+
+        os.rename(newname, fname)
+        # print("file stripped and renamed")
+        # print("found a shell file")
+    else:
+        print("function at least ran")
 
 # This goes through each subfolder and collects the files so they can be used as inputs in the "RUN_BatchFiles" function
 def FIND_BatchFileTypes(directory):
@@ -82,16 +100,22 @@ def FIND_BatchFileTypes(directory):
             # If it runs across a pcomp file, add it to the dictionary
             if file_path.endswith(".sh") and "PCOMP" in file_path:
                 # print("found the precomp file")
+                SarithFileStrip(file_path)
+                os.chmod(file_path, 0o777)
                 batchFile_parameters["pcompBatchFile"] = file_path
 
             # If it runs across an init file, add it to the dictionary
             elif file_path.endswith(".sh") and "Init" in file_path:
                 # print("found the init file")
+                SarithFileStrip(file_path)
+                os.chmod(file_path,0o777)
                 batchFile_parameters["initBatchFileName"] = file_path
 
             # When it runs across any other sh files in the directory add them too
             elif file_path.endswith(".sh"):
                 # print("found a supporting file")
+                SarithFileStrip(file_path)
+                os.chmod(file_path, 0o777)
                 batchFile_parameters["supportingBatchFiles"].append(file_path)
 
     return batchFile_parameters
@@ -102,15 +126,18 @@ if __name__ == "__main__":
     Main_Directory = "/home/pferrer/new"
     # Make the directory fully R/W
     # os.chmod(Main_Directory,777)
+    FIND_BatchFileTypes(Main_Directory)
     # Find the different inputs for running the batch files
     for root, dirs, files in os.walk(os.path.abspath(Main_Directory)):
         for folder in dirs:
             current_folder = os.path.join(Main_Directory,folder)
             os.chdir(current_folder)
-            print(os.getcwd())
+            # print(os.getcwd())
             params = FIND_BatchFileTypes(current_folder)
-            print(params)
-            print()
+            # print(params)
+            # print()
             # Deep Breath.... Run all the batch files
             RUN_BatchFiles(params.get('initBatchFileName'),params.get('supportingBatchFiles'), params.get('pcompBatchFile'))
+
+    # Collect the results of the sims
 

@@ -8,6 +8,9 @@ import shutil
 from HELPERS.HELPER_Login_Info import Login
 import HELPERS.HELPER_SMS as sms
 
+###### Important Global Variables #########
+HKS_LaunchDGP = r'HKS_LaunchDGP.py'
+
 
 
 # TODO: 1. Convert batch files to shell files
@@ -32,7 +35,7 @@ class Convert:
                         for segment in parse:
                             if "del" in segment:
                                 replaced.append("rm")
-                            if os.path.exists(segment):
+                            elif os.path.exists(segment):
                                 found_a_file = segment
                                 if ".rad" and "material" in found_a_file:
                                     redirection = "../Materials.rad"
@@ -52,6 +55,7 @@ class Convert:
             outfile.close()
 
     # This removes carriage returns (thanks sarith)
+    # NEED TO CHECK IF THIS IS ACTUALLY RUNNING.  I DONT THINK IT IS
     def sarithFixFile(self, directory):
         for root, dir, fname in os.walk(directory):
             if ".sh" in fname and "new" not in fname:
@@ -197,8 +201,8 @@ def prepareFileTransfer(Local_Main_Directory):
 
 ##### Various Locations for Main Direcotry dependent upon testing environment
 # Local_Main_Directory = input("Paste Folder Location of .bat files for conversion:")
-# Local_Main_Directory = r"C:\Users\pferrer\Desktop\test"
-Local_Main_Directory = "/Users/paulferrer/Desktop/DGP_TestFiles"
+Local_Main_Directory = r"C:\Users\pferrer\Desktop\test"
+# Local_Main_Directory = "/Users/paulferrer/Desktop/DGP_TestFiles"
 Azure_Main_Directory = "/home/pferrer/new"
 
 # Walk the Directory and Convert the batch files
@@ -232,12 +236,14 @@ for i in range(vm_count):
     login = Login()
     ssh = pf_ssh(IP,22, login.ADMIN_NAME, login.ADMIN_PSWD)
     ssh.sendCommand("mkdir new")
+
+    # Send the Rad Files (one for geometry and one for materials) setparately
     for radfile in Rad_Files_For_Transfer:
         original_file_path = os.path.abspath(radfile)
         destination_file_path = Azure_Main_Directory + r"/" + os.path.split(original_file_path)[1]
         ssh.copyfilesSCP(IP,22,login.ADMIN_NAME,login.ADMIN_PSWD,original_file_path,destination_file_path)
 
-    # Iterate through each folder and send the contents
+    # Iterate through each folder and send the contents of the simulation files
     for folder in Folders_To_Send:
         folderobject = os.path.join(Local_Main_Directory,folder)
         if os.path.isdir(folderobject):
@@ -252,5 +258,15 @@ for i in range(vm_count):
                     ssh.copyfilesSCP(IP,22,login.ADMIN_NAME,login.ADMIN_PSWD,original_file_path,destination_file_path)
         print()
 
+
     sms.DGPfilesCopiedToCloud(i,login)
     print("\n\n")
+    #
+    # # Copy the "HKS_LaunchDGP.py" file to the remote system
+    original_file_path = HKS_LaunchDGP
+    destination_file_path = Azure_Main_Directory + "/" + original_file_path
+    ssh.copyfilesSCP(IP,22,login.ADMIN_NAME,login.ADMIN_PSWD,original_file_path,destination_file_path)
+    print(destination_file_path + " Copied to Azure")
+
+    ssh.sendCommand("python " + destination_file_path)
+    print("Simulations Launched")
