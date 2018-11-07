@@ -7,6 +7,12 @@ from HELPERS.HELPER_SSH import pf_ssh
 import shutil
 from HELPERS.HELPER_Login_Info import Login
 import HELPERS.HELPER_SMS as sms
+import threading
+import multiprocessing
+import paramiko
+from stat import S_ISDIR
+
+
 
 ###### Important Global Variables #########
 HKS_LaunchDGP = r'HKS_LaunchDGP.py'
@@ -190,19 +196,102 @@ def prepareFileTransfer(Local_Main_Directory):
 
     return Rad_Files_For_Transfer
 
+# This performs all operations to get the files over to azure and then run them
+def sendFilesToAzure(Rad_Files_For_Transfer, Azure_Main_Directory, Local_Main_Directory):
+    Folders_To_Send = divideIntoMachineGroups[i]
+    IP = vm_IP_List[i]
+    print("Machine " + str(i))
+    login = Login()
+    ssh = pf_ssh(IP, 22, login.ADMIN_NAME, login.ADMIN_PSWD)
+    ssh.sendCommand("mkdir new")
 
+    # Send the Rad Files (one for geometry and one for materials) setparately
+    for radfile in Rad_Files_For_Transfer:
+        original_file_path = os.path.abspath(radfile)
+        destination_file_path = Azure_Main_Directory + r"/" + os.path.split(original_file_path)[1]
+        ssh.copyfilesSCP(IP, 22, login.ADMIN_NAME, login.ADMIN_PSWD, original_file_path, destination_file_path)
+
+    # Iterate through each folder and send the contents of the simulation files
+    for folder in Folders_To_Send:
+        folderobject = os.path.join(Local_Main_Directory, folder)
+        if os.path.isdir(folderobject):
+            print("CURRENT FOLDER IS: " + folder)
+        for root, dirs, files in os.walk(os.path.join(Local_Main_Directory, folder)):
+            for file in files:
+                if not file == ".DS_Store" and not file.endswith(".rad"):
+                    print(file)
+                    original_file_path = os.path.join(root, file)
+                    ssh.sendCommand("mkdir ./new/" + folder)
+                    destination_file_path = Azure_Main_Directory + r"/" + folder + r"/" + file
+                    ssh.copyfilesSCP(IP, 22, login.ADMIN_NAME, login.ADMIN_PSWD, original_file_path,
+                                     destination_file_path)
+        print()
+
+    sms.DGPfilesCopiedToCloud(i, login)
+    print("\n\n")
+
+    # Copy the "HKS_LaunchDGP.py" file to the remote system
+    original_file_path = HKS_LaunchDGP
+    destination_file_path = Azure_Main_Directory + "/" + original_file_path
+    ssh.copyfilesSCP(IP, 22, login.ADMIN_NAME, login.ADMIN_PSWD, original_file_path, destination_file_path)
+    print(destination_file_path + " Copied to Azure")
+
+    # LAUNCH SIMULATIONS
+    ssh.sendCommand("python " + destination_file_path)
+    print("simulations launched")
+
+
+
+def collectHDRfiles(Azure_Main_Directory):
+    IP = vm_IP_List[i]
+    login = Login()
+    transport = paramiko.Transport((IP, 22))
+    transport.connect(username=login.ADMIN_NAME, password=login.ADMIN_PSWD)
+    sftp = paramiko.SFTPClient.from_transport(transport)
+    sftp.chdir(Azure_Main_Directory)
+    file_list = sftp.listdir_attr(path=Azure_Main_Directory)
+    recursiveFileCopy(file_list)
+
+
+
+
+
+    for item in file_list:
+        if isdir(sftp, item):
+            recursiveFolderSearch(item,sftp)
+        #     print(item + ": This is a Directory")
+        #     collectHDRfiles(Azure_Main_Directory)
+        else:
+            print("This is a file")
+            break
+        # else:
+        #     collectHDRfiles(item)
+
+    sftp.close()
+    transport.close()
+
+
+
+# This will determine if the path input is a valid linux directory
+def isdir(sftp, item):
+    path = sftp.getcwd() + "/" + item
+    try:
+        return S_ISDIR(sftp.stat(path).st_mode)
+    except IOError:
+        #Path does not exist, so by definition not a directory
+        return False
+
+# This keeps going if it finds a folder
+def recursiveFolderSearch(item,sftp):
+    directory = sftp.getcwd()
+    sftp.chdir(directory + "/" + item)
 
 ########################################################################################################################
-""" Step 1: Walk through all the folders in the study folder and convert the  batch files to bash files 
-    Step 2: While walking through the directory tree, also remove all the rad files except two.  Only one copy of rad 
-            and material rad will be used per virtual machine.  Rename the rad files and place them outside the hourly
-            directory tree
-"""
 
 ##### Various Locations for Main Direcotry dependent upon testing environment
 # Local_Main_Directory = input("Paste Folder Location of .bat files for conversion:")
-Local_Main_Directory = r"C:\Users\pferrer\Desktop\test"
-# Local_Main_Directory = "/Users/paulferrer/Desktop/DGP_TestFiles"
+# Local_Main_Directory = r"C:\Users\pferrer\Desktop\test"
+Local_Main_Directory = "/Users/paulferrer/Desktop/DGP_TestFiles"
 Azure_Main_Directory = "/home/pferrer/new"
 
 # Walk the Directory and Convert the batch files
@@ -210,12 +299,6 @@ Azure_Main_Directory = "/home/pferrer/new"
 # delete all the other rad files encountered in the folders
 Rad_Files_For_Transfer = prepareFileTransfer(Local_Main_Directory)
 
-""" Step 3: figure out how to copy over the files to the vm:
-            Identify how many VMs there are
-            Copy over ONE COPY of the rad files to each VM
-            Divide the number of hourly directories by the number of vm's
-            and send each group of directories to the correct VM
-"""
 # Get the count and IP addresses of the currently assigned VM's
 vm_count = GET_VMCount()
 vm_IP_List = GET_VMIP()
@@ -227,46 +310,19 @@ chunk_size = math.ceil(len(directory_contents) / vm_count)
 # Look more into how this works, but this will split the folder names into even chunks based on the number of VMs
 # https://stackoverflow.com/questions/312443/how-do-you-split-a-list-into-evenly-sized-chunks
 divideIntoMachineGroups = [directory_contents[i:i + chunk_size] for i in range(0, len(directory_contents), chunk_size)]
-
 sms = sms.SMS()
-for i in range(vm_count):
-    Folders_To_Send = divideIntoMachineGroups[i]
-    IP = vm_IP_List[i]
-    print("Machine " + str(i))
-    login = Login()
-    ssh = pf_ssh(IP,22, login.ADMIN_NAME, login.ADMIN_PSWD)
-    ssh.sendCommand("mkdir new")
-
-    # Send the Rad Files (one for geometry and one for materials) setparately
-    for radfile in Rad_Files_For_Transfer:
-        original_file_path = os.path.abspath(radfile)
-        destination_file_path = Azure_Main_Directory + r"/" + os.path.split(original_file_path)[1]
-        ssh.copyfilesSCP(IP,22,login.ADMIN_NAME,login.ADMIN_PSWD,original_file_path,destination_file_path)
-
-    # Iterate through each folder and send the contents of the simulation files
-    for folder in Folders_To_Send:
-        folderobject = os.path.join(Local_Main_Directory,folder)
-        if os.path.isdir(folderobject):
-            print("CURRENT FOLDER IS: " + folder)
-        for root,dirs,files in os.walk(os.path.join(Local_Main_Directory,folder)):
-            for file in files:
-                if not file == ".DS_Store" and not file.endswith(".rad"):
-                    print(file)
-                    original_file_path = os.path.join(root,file)
-                    ssh.sendCommand("mkdir ./new/" + folder)
-                    destination_file_path = Azure_Main_Directory + r"/" + folder + r"/" + file
-                    ssh.copyfilesSCP(IP,22,login.ADMIN_NAME,login.ADMIN_PSWD,original_file_path,destination_file_path)
-        print()
 
 
-    sms.DGPfilesCopiedToCloud(i,login)
-    print("\n\n")
+if __name__ == '__main__':
+    # jobs = []
+    for i in range(vm_count):
+    #     p = multiprocessing.Process(target=sendFilesToAzure, args=(Rad_Files_For_Transfer,Azure_Main_Directory,Local_Main_Directory))
+    #     jobs.append(p)
+    #     p.start()
     #
-    # # Copy the "HKS_LaunchDGP.py" file to the remote system
-    original_file_path = HKS_LaunchDGP
-    destination_file_path = Azure_Main_Directory + "/" + original_file_path
-    ssh.copyfilesSCP(IP,22,login.ADMIN_NAME,login.ADMIN_PSWD,original_file_path,destination_file_path)
-    print(destination_file_path + " Copied to Azure")
+    # for job in jobs:
+    #     job.join()
+    #
+    # print("All Simulations complete")
 
-    ssh.sendCommand("python " + destination_file_path)
-    print("Simulations Launched")
+        collectHDRfiles(Azure_Main_Directory)
