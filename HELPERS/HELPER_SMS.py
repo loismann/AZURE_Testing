@@ -69,3 +69,51 @@ class SMS:
                       'Subject:' + subject + '\n' + email_body
                       )
         conn.quit()
+
+    def SimulationsStarted(self,Instance,Login_Class):
+        # Send a text message
+        subject = "Simulations launched on VM: " + str(Instance)
+        email_body = "Simulations launched on VM: " + str(Instance)
+        conn = smtplib.SMTP('smtp.gmail.com', 587)
+        conn.ehlo()
+        conn.starttls()
+        conn.login(Login_Class.EMAIL_SENDER,
+                   Login_Class.EMAIL_PASSWORD,
+                   )
+        conn.sendmail(Login_Class.EMAIL_SENDER,
+                      Login_Class.RECIPIENT,
+                      'Subject:' + subject + '\n' + email_body
+                      )
+        conn.quit()
+
+    def SimulationsComplete(self,Login_Class):
+        # Send a text message
+        subject = "Simulations Complete!"
+        email_body = "Simulations Complete!"
+        conn = smtplib.SMTP('smtp.gmail.com', 587)
+        conn.ehlo()
+        conn.starttls()
+        conn.login(Login_Class.EMAIL_SENDER,
+                   Login_Class.EMAIL_PASSWORD,
+                   )
+        conn.sendmail(Login_Class.EMAIL_SENDER,
+                      Login_Class.RECIPIENT,
+                      'Subject:' + subject + '\n' + email_body
+                      )
+        conn.quit()
+
+    def HDRsCopied(self,Login_Class):
+        # Send a text message
+        subject = "HDR Files Copied Back To Local Machine"
+        email_body = "HDR Files Copied Back To Local Machine"
+        conn = smtplib.SMTP('smtp.gmail.com', 587)
+        conn.ehlo()
+        conn.starttls()
+        conn.login(Login_Class.EMAIL_SENDER,
+                   Login_Class.EMAIL_PASSWORD,
+                   )
+        conn.sendmail(Login_Class.EMAIL_SENDER,
+                      Login_Class.RECIPIENT,
+                      'Subject:' + subject + '\n' + email_body
+                      )
+        conn.quit()

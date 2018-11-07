@@ -73,63 +73,8 @@ class Convert:
                         if lines.strip():
                             f2.write(lines.strip() + '\n')
                         print(list(lines))
+                        print("this came from sarith's function")
                 os.rename(newname, fname)
-
-# This kicks off the batch files
-def excecuteBatchFiles(batchFileNames, maxPRuns=None, shell=True, waitingTime=0.5):
-    """Run a number of batch files in parallel and
-            wait to end of the analysis.
-
-            Args:
-                batchFileNames: List of batch files
-                maxPRuns: max number of files to be ran in parallel (default = 0)
-                shell: set to True if you do NOT want to see the cmd window while the analysis is runnig
-        """
-
-    if not maxPRuns: maxPRuns = 1
-    maxPRuns = int(maxPRuns)
-    total = len(batchFileNames)
-
-    if maxPRuns < 1: maxPRuns = 1
-    if maxPRuns > total: maxPRuns = total
-
-    running = 0
-    done = False
-    jobs = []
-    pid = 0
-
-    try:
-        while not done:
-            if running < maxPRuns and pid < total:
-                # execute the files
-
-                # jobs.append(subprocess.Popen(["bash", batchFileNames[pid]]))
-                jobs.append(os.system("bash %s"% batchFileNames[pid]))
-
-                pid += 1
-                print("Batch File: " + batchFileNames[pid] + " Launched")
-                time.sleep(waitingTime)
-
-            # count how many jobs are running and how many are done
-            running = 0
-            finished = 0
-            for job in jobs:
-                if job.poll() is None:
-                    # one job is still running
-                    running += 1
-                else:
-                    finished += 1
-
-            if running == maxPRuns:
-                # wait for half a second
-                # print "waiting..."
-                time.sleep(waitingTime)
-
-            if finished == total:
-                done = True
-
-    except Exception as e:
-        print("Something went wrong: %s" % str(e))
 
 # This will get the number of VM's in use from the local copy of the IP Address file
 def GET_VMCount():
@@ -198,10 +143,10 @@ def prepareFileTransfer(Local_Main_Directory):
     return Rad_Files_For_Transfer
 
 # This performs all operations to get the files over to azure and then run them
-def sendFilesToAzure(Rad_Files_For_Transfer, Azure_Main_Directory, Local_Main_Directory):
+def sendFilesToAzureAndLaunch(Rad_Files_For_Transfer, Azure_Main_Directory, Local_Main_Directory):
     Folders_To_Send = divideIntoMachineGroups[i]
     IP = vm_IP_List[i]
-    print("Machine " + str(i))
+    print("Sending Files to Machine " + str(i))
     login = Login()
     ssh = pf_ssh(IP, 22, login.ADMIN_NAME, login.ADMIN_PSWD)
     ssh.sendCommand("mkdir new")
@@ -216,30 +161,31 @@ def sendFilesToAzure(Rad_Files_For_Transfer, Azure_Main_Directory, Local_Main_Di
     for folder in Folders_To_Send:
         folderobject = os.path.join(Local_Main_Directory, folder)
         if os.path.isdir(folderobject):
-            print("CURRENT FOLDER IS: " + folder)
+            print("Copying folder: " + folder)
         for root, dirs, files in os.walk(os.path.join(Local_Main_Directory, folder)):
             for file in files:
                 if not file == ".DS_Store" and not file.endswith(".rad"):
-                    print(file)
+                    # print(file)
                     original_file_path = os.path.join(root, file)
                     ssh.sendCommand("mkdir ./new/" + folder)
                     destination_file_path = Azure_Main_Directory + r"/" + folder + r"/" + file
                     ssh.copyfilesSCP(IP, 22, login.ADMIN_NAME, login.ADMIN_PSWD, original_file_path,
                                      destination_file_path)
-        print()
+        # print()
 
     sms.DGPfilesCopiedToCloud(i, login)
-    print("\n\n")
+    # print("\n\n")
 
     # Copy the "HKS_LaunchDGP.py" file to the remote system
     original_file_path = HKS_LaunchDGP
     destination_file_path = Azure_Main_Directory + "/" + original_file_path
     ssh.copyfilesSCP(IP, 22, login.ADMIN_NAME, login.ADMIN_PSWD, original_file_path, destination_file_path)
-    print(destination_file_path + " Copied to Azure")
+    # print(destination_file_path + " Copied to Azure")
 
     # LAUNCH SIMULATIONS
     ssh.sendCommand("python " + destination_file_path)
-    print("simulations launched")
+    print("Simulations launched on Machine: " + str(i))
+    sms.SimulationsStarted(i, login)
 
 def sftp_walk(remotepath,sftp):
     path=remotepath
@@ -273,7 +219,7 @@ def collectHDRfiles(Azure_Main_Directory):
                 # print(file)
                 #sftp.get(remote, local) line for dowloading.
                 sftp.get(os.path.join(os.path.join(path,file)), "/Users/paulferrer/Desktop/TEST/" + file)
-                print("/Users/paulferrer/Desktop/TEST/" + file)
+                # print("/Users/paulferrer/Desktop/TEST/" + file)
 
 
 
@@ -310,15 +256,17 @@ sms = sms.SMS()
 if __name__ == '__main__':
     jobs = []
     for i in range(vm_count):
-        p = multiprocessing.Process(target=sendFilesToAzure, args=(Rad_Files_For_Transfer,Azure_Main_Directory,Local_Main_Directory))
+        p = multiprocessing.Process(target=sendFilesToAzureAndLaunch, args=(Rad_Files_For_Transfer, Azure_Main_Directory, Local_Main_Directory))
         jobs.append(p)
         p.start()
 
     for job in jobs:
         job.join()
 
-    print("All Simulations complete")
+    print("All Simulations complete\n")
+    sms.SimulationsComplete(Login().login)
 
     for i in range(vm_count):
         collectHDRfiles(Azure_Main_Directory)
-    print("HDR files copied back to local machine")
+    print("HDR files copied back to local machine\n")
+    sms.HDRsCopied(Login().login)
