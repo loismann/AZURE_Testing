@@ -40,22 +40,23 @@ class Convert:
                     if parse:
                         for segment in parse:
                             if "del" in segment:
+                                # print("removed the 'del' command")
                                 replaced.append("rm")
-                            elif os.path.exists(segment):
-                                found_a_file = segment
-                                if ".rad" and "material" in found_a_file:
-                                    redirection = "../Materials.rad"
-                                    replaced.append(redirection)
-                                elif ".rad" in found_a_file and "material" not in found_a_file:
-                                    redirection = "../Objects.rad"
-                                    replaced.append(redirection)
-                                else:
-                                    replaced.append(os.path.basename(segment))
-                                # print("found a file!")
-
+                            elif ".rad" and "material" in segment:
+                                # print("Found the Material.rad file")
+                                redirection = "../Materials.rad"
+                                replaced.append(redirection)
+                            elif ".rad" in segment and "material" not in segment:
+                                # print("Found the Object.rad file")
+                                redirection = "../Objects.rad"
+                                replaced.append(redirection)
+                            elif ".sky" in segment:
+                                # print("Found a sky file")
+                                redirection = os.path.split(segment)[1]
+                                # print(redirection)
+                                replaced.append(redirection)
                             else:
                                 replaced.append(segment)
-
                         new_line = " ".join(replaced)
                         outfile.write(new_line + '\n')
             outfile.close()
@@ -240,7 +241,21 @@ def sendFilesToAzure(Rad_Files_For_Transfer, Azure_Main_Directory, Local_Main_Di
     ssh.sendCommand("python " + destination_file_path)
     print("simulations launched")
 
-
+def sftp_walk(remotepath,sftp):
+    path=remotepath
+    files=[]
+    folders=[]
+    for f in sftp.listdir_attr(remotepath):
+        if S_ISDIR(f.st_mode):
+            folders.append(f.filename)
+        else:
+            files.append(f.filename)
+    if files:
+        yield path, files
+    for folder in folders:
+        new_path=os.path.join(remotepath,folder)
+        for x in sftp_walk(new_path,sftp):
+            yield x
 
 def collectHDRfiles(Azure_Main_Directory):
     IP = vm_IP_List[i]
@@ -248,43 +263,22 @@ def collectHDRfiles(Azure_Main_Directory):
     transport = paramiko.Transport((IP, 22))
     transport.connect(username=login.ADMIN_NAME, password=login.ADMIN_PSWD)
     sftp = paramiko.SFTPClient.from_transport(transport)
-    sftp.chdir(Azure_Main_Directory)
-    file_list = sftp.listdir_attr(path=Azure_Main_Directory)
-    recursiveFileCopy(file_list)
+
+
+    for path,files  in sftp_walk(Azure_Main_Directory, sftp):
+        for file in files:
+
+            # if os.path.split(file)[1] ==
+            if file.endswith(".HDR") and file[-5] != "0":
+                # print(file)
+                #sftp.get(remote, local) line for dowloading.
+                sftp.get(os.path.join(os.path.join(path,file)), "/Users/paulferrer/Desktop/TEST/" + file)
+                print("/Users/paulferrer/Desktop/TEST/" + file)
 
 
 
 
 
-    for item in file_list:
-        if isdir(sftp, item):
-            recursiveFolderSearch(item,sftp)
-        #     print(item + ": This is a Directory")
-        #     collectHDRfiles(Azure_Main_Directory)
-        else:
-            print("This is a file")
-            break
-        # else:
-        #     collectHDRfiles(item)
-
-    sftp.close()
-    transport.close()
-
-
-
-# This will determine if the path input is a valid linux directory
-def isdir(sftp, item):
-    path = sftp.getcwd() + "/" + item
-    try:
-        return S_ISDIR(sftp.stat(path).st_mode)
-    except IOError:
-        #Path does not exist, so by definition not a directory
-        return False
-
-# This keeps going if it finds a folder
-def recursiveFolderSearch(item,sftp):
-    directory = sftp.getcwd()
-    sftp.chdir(directory + "/" + item)
 
 ########################################################################################################################
 
@@ -314,15 +308,17 @@ sms = sms.SMS()
 
 
 if __name__ == '__main__':
-    # jobs = []
+    jobs = []
     for i in range(vm_count):
-    #     p = multiprocessing.Process(target=sendFilesToAzure, args=(Rad_Files_For_Transfer,Azure_Main_Directory,Local_Main_Directory))
-    #     jobs.append(p)
-    #     p.start()
-    #
-    # for job in jobs:
-    #     job.join()
-    #
-    # print("All Simulations complete")
+        p = multiprocessing.Process(target=sendFilesToAzure, args=(Rad_Files_For_Transfer,Azure_Main_Directory,Local_Main_Directory))
+        jobs.append(p)
+        p.start()
 
+    for job in jobs:
+        job.join()
+
+    print("All Simulations complete")
+
+    for i in range(vm_count):
         collectHDRfiles(Azure_Main_Directory)
+    print("HDR files copied back to local machine")
