@@ -8,6 +8,8 @@ import HKS_PrepDGP as  launch_sims
 
 # Where are the Honeybee Files?
 Local_Main_Directory = "/Users/paulferrer/Desktop/DGP_TestFiles"
+# Where is the code stored? (This is needed to point to the Local_IP_Address file)
+Local_Repo_Directory = "/Users/paulferrer/PycharmProjects/Azure_Testing/AZURE_Testing/HELPERS/"
 
 # How Many Virtual Machines do you want?
 vm_count = 5
