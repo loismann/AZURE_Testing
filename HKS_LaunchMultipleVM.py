@@ -5,13 +5,14 @@ import HELPERS.HELPER_Management_Clients
 import _CORE_AUTOBUNTU as core
 import os
 import time
+import multiprocessing
 
 
 
 ##########################################   Run Code   ################################################################
 
 #Main Method for HKS_LaunchMultipleVM.py
-def main(VM_Count,VM_Type,Generate_VM=True):
+def generate_vm(Generate_VM,i):
     # Initialize the Login Class from the Information File
     login = Login()
 
@@ -33,43 +34,61 @@ def main(VM_Count,VM_Type,Generate_VM=True):
         # Create (or override) an empty file to hold the Local IP addresses when this is done
         IP_File = open(os.path.join(os.getcwd(), 'HELPERS', 'Local_IP_Addresses.py'), 'w')
 
-        for i in range(int(VM_Count)):
-            log_message += "Creating Instance " + str(i) + " ...\n"
-            print("Creating Instance " + str(i) + " ...")
 
-            # Create a public IP address
-            core.create_public_ip_address(mgmt.network_client(login), i,login)
-            log_message += "IP Address Created\n"
-            print("IP Address Created")
+        log_message += "Creating Instance " + str(i) + " ...\n"
+        print("Creating Instance " + str(i) + " ...")
 
-            # Create Network Interface
-            core.create_HKSnic(mgmt.network_client(login), i,login)
-            log_message += "Network Interface Created\n"
-            print("Network Interface Created")
+        # Create a public IP address
+        core.create_public_ip_address(mgmt.network_client(login), i,login)
+        log_message += "IP Address Created\n"
+        print("IP Address Created")
 
-            # Create Custom VM
-            core.create_customvm(mgmt.network_client(login), mgmt.compute_client(login), i, login)
-            log_message += "VM Created\n"
-            print("VM " + str(i) + " Created")
-            sms.CreateVM(i,login)
+        # Create Network Interface
+        core.create_HKSnic(mgmt.network_client(login), i,login)
+        log_message += "Network Interface Created\n"
+        print("Network Interface Created")
 
-            # Connect to the machine and add the "man" Location from the usr folder
+        # Create Custom VM
+        core.create_customvm(mgmt.network_client(login), mgmt.compute_client(login), i, login)
+        log_message += "VM Created\n"
+        print("VM " + str(i) + " Created")
+        sms.CreateVM(i,login)
 
-            # Disassociate the IP address from the VM
-            core.disassociate_public_ip_address(mgmt.network_client(login), i, login)
-            log_message += "Public IP address unlinked"
-            log_message += "--------------------------------------------\n"
-            print("Public IP address unlinked\n----------------------------------------\n")
+        # Connect to the machine and add the "man" Location from the usr folder
 
-        for i in range(int(VM_Count)):
-            time.sleep(30)
-            # Get the private IP address of the newly created VM
-            private_IP = core.getPrivateIpAddress(mgmt.network_client(login),i, login)
-            # Write out the local IP to a reference file
-            IP_File.write("VM_" + str(i) + "_Local_IP = " + private_IP + "\n")
-            sms.FoundIP(i,login)
+        # Disassociate the IP address from the VM
+        core.disassociate_public_ip_address(mgmt.network_client(login), i, login)
+        log_message += "Public IP address unlinked"
+        log_message += "--------------------------------------------\n"
+        print("Public IP address unlinked\n----------------------------------------\n")
+
+        time.sleep(15)
+
+
+        # Get the private IP address of the newly created VM
+        private_IP = core.getPrivateIpAddress(mgmt.network_client(login),i, login)
+        # Write out the local IP to a reference file
+        IP_File.write("VM_" + str(i) + "_Local_IP = " + private_IP + "\n")
+        sms.FoundIP(i,login)
         IP_File.close()
 
     else:
         print("Just Testing Stuff: HKS_LaunchMultipleVM")
+
+
+def main(VM_Count):
+    # Multithreaded version
+    Generate_VM = True
+    jobs = []
+    for i in range(VM_Count):
+        p = multiprocessing.Process(target=generate_vm,
+                                    args=(Generate_VM,i))
+        jobs.append(p)
+        p.start()
+
+    for job in jobs:
+        job.join()
+
+
+
 

@@ -53,3 +53,8 @@ def main(Delete_VMs=True):
         print(found_machine + "\n")
     else:
         print("Just Testing Stuff: HKS_DeleteAzureResources")
+
+
+
+# If you need to run this file as __Main__:
+# main()
