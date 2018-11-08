@@ -67,8 +67,8 @@ def create_HKSnic(network_client, Instance,Login_Class):
         Login_Class.GROUP_NAME + '_myNic_' + str(Instance),
         nic_params
     )
+    print("Creating NIC...")
     while not creation_result.done():
-        print("Creating NIC...")
         time.sleep(5)
 
     return creation_result.result()
@@ -106,8 +106,8 @@ def create_customvm(network_client, compute_client, Instance, Login_Class):
         Login_Class.VM_NAME + "-" + str(Instance),
         vm_parameters
     )
+    print("creating VM...")
     while not creation_result.done():
-        print("creating VM...")
         time.sleep(5)
 
     return creation_result.result()
@@ -134,8 +134,8 @@ def updateRadiancePathEntries(Instance):
 #Delete All the Resources
 def delete_resources(resource_group_client,Login_Class):
     creation_result = resource_group_client.resource_groups.delete(Login_Class.GROUP_NAME)
+    print("Deleting Resources...")
     while not creation_result.done():
-        print("Deleting Resources...")
         time.sleep(10)
 
 

@@ -11,6 +11,7 @@ import threading
 import multiprocessing
 import paramiko
 from stat import S_ISDIR
+import HELPERS.HELPER_ResetTestFiles as reset
 
 
 
@@ -135,6 +136,7 @@ def prepareFileTransfer(Local_Main_Directory):
 
     moved1 = os.path.join(Local_Main_Directory, "Materials.rad")
     moved2 = os.path.join(Local_Main_Directory, "Objects.rad")
+
     os.rename(shutil.move(mat_rad, Local_Main_Directory), moved1 )
     os.rename(shutil.move(object_rad, Local_Main_Directory), moved2)
     Rad_Files_For_Transfer.append(moved1)
@@ -143,15 +145,21 @@ def prepareFileTransfer(Local_Main_Directory):
     return Rad_Files_For_Transfer
 
 # This performs all operations to get the files over to azure and then run them
-def sendFilesToAzureAndLaunch(Rad_Files_For_Transfer, Azure_Main_Directory, Local_Main_Directory):
+def sendFilesToAzureAndLaunch(Rad_Files_For_Transfer,
+                              Azure_Main_Directory,
+                              Local_Main_Directory,
+                              vm_IP_List,divideIntoMachineGroups,
+                              i):
+
+
     Folders_To_Send = divideIntoMachineGroups[i]
     IP = vm_IP_List[i]
-    print("Sending Files to Machine " + str(i))
     login = Login()
     ssh = pf_ssh(IP, 22, login.ADMIN_NAME, login.ADMIN_PSWD)
     ssh.sendCommand("mkdir new")
+    sms_instance = sms.SMS()
 
-    # Send the Rad Files (one for geometry and one for materials) setparately
+    # Send the Rad Files (one for geometry and one for materials) separately
     for radfile in Rad_Files_For_Transfer:
         original_file_path = os.path.abspath(radfile)
         destination_file_path = Azure_Main_Directory + r"/" + os.path.split(original_file_path)[1]
@@ -161,11 +169,11 @@ def sendFilesToAzureAndLaunch(Rad_Files_For_Transfer, Azure_Main_Directory, Loca
     for folder in Folders_To_Send:
         folderobject = os.path.join(Local_Main_Directory, folder)
         if os.path.isdir(folderobject):
-            print("Copying folder: " + folder)
+            print("Machine " + str(i) + ": Copying folder: " + folder)
         for root, dirs, files in os.walk(os.path.join(Local_Main_Directory, folder)):
             for file in files:
                 if not file == ".DS_Store" and not file.endswith(".rad"):
-                    # print(file)
+                    print("     " + file)
                     original_file_path = os.path.join(root, file)
                     ssh.sendCommand("mkdir ./new/" + folder)
                     destination_file_path = Azure_Main_Directory + r"/" + folder + r"/" + file
@@ -173,7 +181,7 @@ def sendFilesToAzureAndLaunch(Rad_Files_For_Transfer, Azure_Main_Directory, Loca
                                      destination_file_path)
         # print()
 
-    sms.DGPfilesCopiedToCloud(i, login)
+    sms_instance.DGPfilesCopiedToCloud(i, login)
     # print("\n\n")
 
     # Copy the "HKS_LaunchDGP.py" file to the remote system
@@ -185,7 +193,7 @@ def sendFilesToAzureAndLaunch(Rad_Files_For_Transfer, Azure_Main_Directory, Loca
     # LAUNCH SIMULATIONS
     ssh.sendCommand("python " + destination_file_path)
     print("Simulations launched on Machine: " + str(i))
-    sms.SimulationsStarted(i, login)
+    sms_instance.SimulationsStarted(i, login)
 
 def sftp_walk(remotepath,sftp):
     path=remotepath
@@ -203,7 +211,7 @@ def sftp_walk(remotepath,sftp):
         for x in sftp_walk(new_path,sftp):
             yield x
 
-def collectHDRfiles(Azure_Main_Directory):
+def collectHDRfiles(Azure_Main_Directory,vm_IP_List,i):
     IP = vm_IP_List[i]
     login = Login()
     transport = paramiko.Transport((IP, 22))
@@ -223,40 +231,65 @@ def collectHDRfiles(Azure_Main_Directory):
 
 
 
-
+# Local_Main_Directory = "/Users/paulferrer/Desktop/DGP_TestFiles"
+# Azure_Main_Directory = "/home/pferrer/new"
 
 
 ########################################################################################################################
 
-##### Various Locations for Main Direcotry dependent upon testing environment
-# Local_Main_Directory = input("Paste Folder Location of .bat files for conversion:")
-# Local_Main_Directory = r"C:\Users\pferrer\Desktop\test"
-Local_Main_Directory = "/Users/paulferrer/Desktop/DGP_TestFiles"
-Azure_Main_Directory = "/home/pferrer/new"
-
-# Walk the Directory and Convert the batch files
-# At the same time, isolate a copy of the rad files outside the folder structure, and then
-# delete all the other rad files encountered in the folders
-Rad_Files_For_Transfer = prepareFileTransfer(Local_Main_Directory)
-
-# Get the count and IP addresses of the currently assigned VM's
-vm_count = GET_VMCount()
-vm_IP_List = GET_VMIP()
-
-# Get number of sim hours that will go to each VM
-directory_contents = sorted([f for f in os.listdir(Local_Main_Directory) if not f.startswith('.')], key=lambda f: f.lower())
-chunk_size = math.ceil(len(directory_contents) / vm_count)
-
-# Look more into how this works, but this will split the folder names into even chunks based on the number of VMs
-# https://stackoverflow.com/questions/312443/how-do-you-split-a-list-into-evenly-sized-chunks
-divideIntoMachineGroups = [directory_contents[i:i + chunk_size] for i in range(0, len(directory_contents), chunk_size)]
-sms = sms.SMS()
+def main(Local_Main_Directory):
+    Azure_Main_Directory = "/home/pferrer/new"
+    ##### Various Locations for Main Direcotry dependent upon testing environment
+    # Local_Main_Directory = input("Paste Folder Location of .bat files for conversion:")
+    # Local_Main_Directory = r"C:\Users\pferrer\Desktop\test"
 
 
-if __name__ == '__main__':
+    # Walk the Directory and Convert the batch files
+    # At the same time, isolate a copy of the rad files outside the folder structure, and then
+    # delete all the other rad files encountered in the folders
+
+    # Run the HELPER_ResetTestFiles.py Script
+    reset.main()
+
+    Rad_Files_For_Transfer = prepareFileTransfer(Local_Main_Directory)
+
+    # Get the count and IP addresses of the currently assigned VM's
+    vm_count = GET_VMCount()
+    vm_IP_List = GET_VMIP()
+    sms_main = sms.SMS()
+    login_main = Login()
+    print(type(login_main))
+
+    # Get number of sim hours that will go to each VM
+    directory_contents = sorted([f for f in os.listdir(Local_Main_Directory) if not f.startswith('.')], key=lambda f: f.lower())
+    chunk_size = math.ceil(len(directory_contents) / vm_count)
+
+    # Look more into how this works, but this will split the folder names into even chunks based on the number of VMs
+    # https://stackoverflow.com/questions/312443/how-do-you-split-a-list-into-evenly-sized-chunks
+    divideIntoMachineGroups = [directory_contents[i:i + chunk_size] for i in range(0, len(directory_contents), chunk_size)]
+
+
+    # # Single Threaded version
+    # for i in range(vm_count):
+    #     sendFilesToAzureAndLaunch(Rad_Files_For_Transfer,
+    #                               Azure_Main_Directory,
+    #                               Local_Main_Directory,
+    #                               vm_IP_List,
+    #                               divideIntoMachineGroups,
+    #                               i)
+
+
+
+    #Multithreaded version
     jobs = []
     for i in range(vm_count):
-        p = multiprocessing.Process(target=sendFilesToAzureAndLaunch, args=(Rad_Files_For_Transfer, Azure_Main_Directory, Local_Main_Directory))
+        p = multiprocessing.Process(target=sendFilesToAzureAndLaunch,
+                                    args=(Rad_Files_For_Transfer,
+                                          Azure_Main_Directory,
+                                          Local_Main_Directory,
+                                          vm_IP_List,
+                                          divideIntoMachineGroups,
+                                          i))
         jobs.append(p)
         p.start()
 
@@ -264,9 +297,10 @@ if __name__ == '__main__':
         job.join()
 
     print("All Simulations complete\n")
-    sms.SimulationsComplete(Login().login)
+    sms_main.SimulationsComplete(login_main)
 
     for i in range(vm_count):
-        collectHDRfiles(Azure_Main_Directory)
+        collectHDRfiles(Azure_Main_Directory,vm_IP_List,i)
     print("HDR files copied back to local machine\n")
-    sms.HDRsCopied(Login().login)
+    sms_main.HDRsCopied(login_main)
+
