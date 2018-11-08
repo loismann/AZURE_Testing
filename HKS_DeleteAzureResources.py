@@ -10,7 +10,7 @@ import os
 ################################################# Run Code #############################################################
 
 # Main method for HKS_DeleteAzureResources.py
-def main(Delete_VMs=True):
+def main(Local_Main_Directory,Delete_VMs=True):
     # Initialize Management Clients
     if Delete_VMs:
 
@@ -54,7 +54,10 @@ def main(Delete_VMs=True):
     else:
         print("Just Testing Stuff: HKS_DeleteAzureResources")
 
+    #delete the IP file
+    if
 
 
 # If you need to run this file as __Main__:
-# main()
+Local_Repo_Directory = "/Users/paulferrer/Desktop/DGP_TestFiles"
+main(Local_Main_Directory)

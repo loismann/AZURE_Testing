@@ -268,6 +268,8 @@ def main(Local_Main_Directory):
     # https://stackoverflow.com/questions/312443/how-do-you-split-a-list-into-evenly-sized-chunks
     divideIntoMachineGroups = [directory_contents[i:i + chunk_size] for i in range(0, len(directory_contents), chunk_size)]
 
+    print(vm_count)
+    print(len(divideIntoMachineGroups))
 
     # # Single Threaded version
     # for i in range(vm_count):
@@ -281,26 +283,31 @@ def main(Local_Main_Directory):
 
 
     #Multithreaded version
-    jobs = []
-    for i in range(vm_count):
-        p = multiprocessing.Process(target=sendFilesToAzureAndLaunch,
-                                    args=(Rad_Files_For_Transfer,
-                                          Azure_Main_Directory,
-                                          Local_Main_Directory,
-                                          vm_IP_List,
-                                          divideIntoMachineGroups,
-                                          i))
-        jobs.append(p)
-        p.start()
+    # jobs = []
+    # for i in range(vm_count):
+    #     p = multiprocessing.Process(target=sendFilesToAzureAndLaunch,
+    #                                 args=(Rad_Files_For_Transfer,
+    #                                       Azure_Main_Directory,
+    #                                       Local_Main_Directory,
+    #                                       vm_IP_List,
+    #                                       divideIntoMachineGroups,
+    #                                       i))
+    #     jobs.append(p)
+    #     p.start()
+    #
+    # for job in jobs:
+    #     job.join()
+    #
+    # print("All Simulations complete\n")
+    # sms_main.SimulationsComplete(login_main)
+    #
+    # for i in range(vm_count):
+    #     collectHDRfiles(Azure_Main_Directory,vm_IP_List,i)
+    # print("HDR files copied back to local machine\n")
+    # sms_main.HDRsCopied(login_main)
 
-    for job in jobs:
-        job.join()
 
-    print("All Simulations complete\n")
-    sms_main.SimulationsComplete(login_main)
 
-    for i in range(vm_count):
-        collectHDRfiles(Azure_Main_Directory,vm_IP_List,i)
-    print("HDR files copied back to local machine\n")
-    sms_main.HDRsCopied(login_main)
-
+# For testing this individual file:
+Local_Main_Directory = "/Users/paulferrer/Desktop/DGP_TestFiles"
+main(Local_Main_Directory)

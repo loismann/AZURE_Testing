@@ -32,7 +32,7 @@ def generate_vm(Generate_VM,i):
         log_message += "\nCreated Resource Group\n\n"
 
         # Create (or override) an empty file to hold the Local IP addresses when this is done
-        IP_File = open(os.path.join(os.getcwd(), 'HELPERS', 'Local_IP_Addresses.py'), 'w')
+        IP_File = open(os.path.join(os.getcwd(), 'HELPERS', 'Local_IP_Addresses.py'), 'a')
 
 
         log_message += "Creating Instance " + str(i) + " ...\n"
@@ -68,6 +68,7 @@ def generate_vm(Generate_VM,i):
         # Get the private IP address of the newly created VM
         private_IP = core.getPrivateIpAddress(mgmt.network_client(login),i, login)
         # Write out the local IP to a reference file
+
         IP_File.write("VM_" + str(i) + "_Local_IP = " + private_IP + "\n")
         sms.FoundIP(i,login)
         IP_File.close()
@@ -92,3 +93,4 @@ def main(VM_Count):
 
 
 
+main(4)
