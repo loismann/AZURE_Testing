@@ -119,6 +119,7 @@ def prepareFileTransfer(Local_Main_Directory):
     Rad_Files_For_Transfer = []
 
     convert = Convert()
+    print("Running File Conversion on New Folder")
     for root, dirs, files in os.walk(os.path.abspath(Local_Main_Directory)):
         for file in files:
             file_path = os.path.join(root, file)
@@ -254,7 +255,7 @@ def main(Local_Main_Directory):
     print("Copying files to test directory")
     reset.main()
 
-    Rad_Files_For_Transfer = prepareFileTransfer(Local_Main_Directory)
+    # Rad_Files_For_Transfer = prepareFileTransfer(Local_Main_Directory)
 
 
 
