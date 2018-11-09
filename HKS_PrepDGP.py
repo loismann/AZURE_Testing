@@ -111,7 +111,9 @@ def GET_VMIP():
 
 # This will convert batch files and strip/reposition rad files
 def prepareFileTransfer(Local_Main_Directory):
+    # THIS FUNCTION ABSOLUTELY NEEDS TO BE MULTI-THREADED
     # These variables will hold a copy of the rad files
+
     mat_rad = None
     object_rad = None
     Rad_Files_For_Transfer = []
@@ -249,9 +251,31 @@ def main(Local_Main_Directory):
     # delete all the other rad files encountered in the folders
 
     # Run the HELPER_ResetTestFiles.py Script
+    print("Copying files to test directory")
     reset.main()
 
     Rad_Files_For_Transfer = prepareFileTransfer(Local_Main_Directory)
+
+
+
+
+
+    # MULTITHREADED VERSION OF PREPARE FILES FOR TRANSFER
+    jobs = []
+    for i in range(50):
+        p = multiprocessing.Process(target=prepareFileTransfer,
+                                    args=(Local_Main_Directory))
+
+        jobs.append(p)
+        p.start()
+
+    for job in jobs:
+        job.join()
+
+
+
+
+
 
     # Get the count and IP addresses of the currently assigned VM's
     vm_count = GET_VMCount()
@@ -268,8 +292,8 @@ def main(Local_Main_Directory):
     # https://stackoverflow.com/questions/312443/how-do-you-split-a-list-into-evenly-sized-chunks
     divideIntoMachineGroups = [directory_contents[i:i + chunk_size] for i in range(0, len(directory_contents), chunk_size)]
 
-    print(vm_count)
-    print(len(divideIntoMachineGroups))
+    # print(vm_count)
+    # print(len(divideIntoMachineGroups))
 
     # # Single Threaded version
     # for i in range(vm_count):
@@ -282,32 +306,32 @@ def main(Local_Main_Directory):
 
 
 
-    #Multithreaded version
-    # jobs = []
-    # for i in range(vm_count):
-    #     p = multiprocessing.Process(target=sendFilesToAzureAndLaunch,
-    #                                 args=(Rad_Files_For_Transfer,
-    #                                       Azure_Main_Directory,
-    #                                       Local_Main_Directory,
-    #                                       vm_IP_List,
-    #                                       divideIntoMachineGroups,
-    #                                       i))
-    #     jobs.append(p)
-    #     p.start()
-    #
-    # for job in jobs:
-    #     job.join()
-    #
-    # print("All Simulations complete\n")
-    # sms_main.SimulationsComplete(login_main)
-    #
-    # for i in range(vm_count):
-    #     collectHDRfiles(Azure_Main_Directory,vm_IP_List,i)
-    # print("HDR files copied back to local machine\n")
-    # sms_main.HDRsCopied(login_main)
+    # Multithreaded version of SEND ALL FILES TO AZURE AND RUN
+    jobs = []
+    for i in range(vm_count):
+        p = multiprocessing.Process(target=sendFilesToAzureAndLaunch,
+                                    args=(Rad_Files_For_Transfer,
+                                          Azure_Main_Directory,
+                                          Local_Main_Directory,
+                                          vm_IP_List,
+                                          divideIntoMachineGroups,
+                                          i))
+        jobs.append(p)
+        p.start()
+
+    for job in jobs:
+        job.join()
+
+    print("All Simulations complete\n")
+    sms_main.SimulationsComplete(login_main)
+
+    for i in range(vm_count):
+        collectHDRfiles(Azure_Main_Directory,vm_IP_List,i)
+    print("HDR files copied back to local machine\n")
+    sms_main.HDRsCopied(login_main)
 
 
 
 # For testing this individual file:
-Local_Main_Directory = "/Users/paulferrer/Desktop/DGP_TestFiles"
-main(Local_Main_Directory)
+# Local_Main_Directory = "/Users/paulferrer/Desktop/DGP_TestFiles"
+# main(Local_Main_Directory)

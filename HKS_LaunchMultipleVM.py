@@ -23,8 +23,7 @@ def generate_vm(Generate_VM,i):
 
     # Run the VM Creation Loop
     if Generate_VM:
-
-        # Start the sticky dictionary entry
+       # Start the sticky dictionary entry
         log_message = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
         # Create the resource group
@@ -79,8 +78,10 @@ def generate_vm(Generate_VM,i):
 
 def main(VM_Count):
     # Multithreaded version
+    print("main method of launch multiple vm file")
     Generate_VM = True
     jobs = []
+
     for i in range(VM_Count):
         p = multiprocessing.Process(target=generate_vm,
                                     args=(Generate_VM,i))
@@ -92,5 +93,3 @@ def main(VM_Count):
 
 
 
-
-main(4)
