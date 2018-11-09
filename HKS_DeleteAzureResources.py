@@ -14,6 +14,7 @@ import os
 def main(Local_Repo_Directory,Delete_VMs=True):
     # Initialize Management Clients
     if Delete_VMs:
+        print("running")
 
         #Initialize Login Information
         login = Login()
@@ -55,17 +56,17 @@ def main(Local_Repo_Directory,Delete_VMs=True):
     else:
         print("Just Testing Stuff: HKS_DeleteAzureResources")
 
-    #delete the IP file
-    for root, dir, filelist in os.walk(Local_Repo_Directory):
-        for file in filelist:
-            print(os.path.abspath(file))
-            if "Local" in file:
-                path = None
-                print(path)
-                # print(path)
-                # os.remove(path)
+    #Just in case... make absolutely sure to delete the IP file
+    for path, directory, files in os.walk(Local_Repo_Directory):
+        for file in files:
+            file_path = os.path.join(path,file)
+            if "Local" in file_path:
+                print("IP Address File Found and Deleted")
+                os.remove(file_path)
+
+
 
 
 # If you need to run this file as __Main__:
-Local_Repo_Directory = "/Users/paulferrer/PycharmProjects/Azure_Testing/AZURE_Testing/"
-main(Local_Repo_Directory,False)
+# Local_Repo_Directory = r"C:\Users\pferrer\PycharmProjects\AZURE_Testing"
+# main(Local_Repo_Directory,True)
