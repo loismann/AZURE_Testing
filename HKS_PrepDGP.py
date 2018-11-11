@@ -28,6 +28,7 @@ class Convert:
     # This converts the bat files to shell files
     def bat_to_sh_DGP(self, file_path):
         sh_file = file_path[:-4] + '.sh'
+        print(file_path)
         with open(file_path, 'r') as infile, open(sh_file, 'w') as outfile:
             outfile.write('#!/usr/bin/env bash\n')
             for i,line in enumerate(infile):
@@ -109,43 +110,97 @@ def GET_VMIP():
         print("No copy of 'Local_IP_Addresses.py' found. Are VM's active?")
     return IP_Addresses
 
-# This will convert batch files and strip/reposition rad files
-def prepareFileTransfer(Local_Main_Directory):
-    # THIS FUNCTION ABSOLUTELY NEEDS TO BE MULTI-THREADED
-    # These variables will hold a copy of the rad files
 
+
+
+# Need to turn the "prepare file transfer function into two functions.
+# The first will be a simple function that sets the rad files to be copied to each machine
+# The second one will be a function that runs the bat to sh process in parallel.
+def radFilesForTransfer(Local_Main_Directory):
+    """
+    This Needs to be run once as a single threaded operation.  This function will set the project rad files outside
+    the main directory.  Once this has been run you can then run the multi-threaded function that will run the bat to
+    sh conversion and delete the rad files
+    :param Local_Main_Directory:
+    :return:
+    """
     mat_rad = None
     object_rad = None
     Rad_Files_For_Transfer = []
 
+    if not os.path.isfile(os.path.join(Local_Main_Directory, "Materials.rad")):
+        print("file doesnt exist")
+        for root, dirs, files in os.walk(os.path.abspath(Local_Main_Directory)):
+            if not os.path.isfile(os.path.join(root, "Materials.rad")):
+                for file in files:
+                    file_path = os.path.join(root, file)
+                    # This will set the rad variables to the first copy of the rad files encountered
+                    if (mat_rad == None or object_rad == None) and file_path.endswith(".rad"):
+                        if "material" in file_path:
+                            mat_rad = file_path
+                        else:
+                            object_rad = file_path
+            else:
+                pass
+
+        if mat_rad:
+            moved1 = os.path.join(Local_Main_Directory, "Materials.rad")
+            moved2 = os.path.join(Local_Main_Directory, "Objects.rad")
+
+            os.rename(shutil.move(mat_rad, Local_Main_Directory), moved1)
+            os.rename(shutil.move(object_rad, Local_Main_Directory), moved2)
+            Rad_Files_For_Transfer.append(moved1)
+            Rad_Files_For_Transfer.append(moved2)
+
+        else:
+            pass
+
+    else:
+        print("file exists")
+
+
+
+    return Rad_Files_For_Transfer
+
+# This returns a dictionary that can be used to multithread the bat to sh process
+def getParallelDictionaryForFilePrep(Local_Main_Directory):
+    filePrepDict = {}
+    hourlyFolders = []
+    counter = 0
+    for root, dirs, files in os.walk(os.path.abspath(Local_Main_Directory)):
+        if "image" not in root and "00" in root:
+            filePrepDict[counter] = root
+            # print(root)
+            counter +=1
+
+    return filePrepDict
+
+# This will convert batch files and strip/ rad files
+#  THIS IS THE NEW WORK IN PROGRESS and is now set to accept a single folder path
+def prepareFileTransfer(filePrepDict,i):
+    """
+    As an input, this function needs a dictionary that will determine how many processes to run this operation on
+    the dictionary will have an index number as a "key" and a list of folder paths representing an even subdivision of the
+    hourly calculation as the "value"
+    :param Local_Main_Directory:
+    :return:
+    """
+    # THIS FUNCTION ABSOLUTELY NEEDS TO BE MULTI-THREADED
+    # These variables will hold a copy of the rad files
+
     convert = Convert()
     print("Running File Conversion on New Folder")
-    for root, dirs, files in os.walk(os.path.abspath(Local_Main_Directory)):
+    folder_path = filePrepDict[i]
+    # walk through the folder paths to find the file path
+
+    for root, dirs, files in (os.walk(folder_path)):
         for file in files:
             file_path = os.path.join(root, file)
             if file_path.endswith(".bat"):
                 convert.bat_to_sh_DGP(file_path)
-                convert.sarithFixFile(Local_Main_Directory)
-                os.remove(file_path)
-            # This will set the rad variables to the first copy of the rad files encountered
-            elif (mat_rad == None or object_rad == None) and file_path.endswith(".rad"):
-                if "material" in file_path:
-                    mat_rad = file_path
-                else:
-                    object_rad = file_path
-            # If the variables have already been set, remove all the rad files that are encountered
-            elif file_path.endswith(".rad"):
+                convert.sarithFixFile(folder_path)
                 os.remove(file_path)
 
-    moved1 = os.path.join(Local_Main_Directory, "Materials.rad")
-    moved2 = os.path.join(Local_Main_Directory, "Objects.rad")
-
-    os.rename(shutil.move(mat_rad, Local_Main_Directory), moved1 )
-    os.rename(shutil.move(object_rad, Local_Main_Directory), moved2)
-    Rad_Files_For_Transfer.append(moved1)
-    Rad_Files_For_Transfer.append(moved2)
-
-    return Rad_Files_For_Transfer
 
 # This performs all operations to get the files over to azure and then run them
 def sendFilesToAzureAndLaunch(Rad_Files_For_Transfer,
@@ -238,9 +293,12 @@ def collectHDRfiles(Azure_Main_Directory,vm_IP_List,i):
 # Azure_Main_Directory = "/home/pferrer/new"
 
 
-########################################################################################################################
+###############################################  DEFINE THE MAIN FUNCTION  ###########################################
 
 def main(Local_Main_Directory):
+    # ALL MULTITHREADING LOGIC TAKES PLACE HERE.  EACH OF THE FUNCTIONS REPRESENTS OPERATION ON A SINGLE ELEMENT
+
+
     Azure_Main_Directory = "/home/pferrer/new"
     ##### Various Locations for Main Direcotry dependent upon testing environment
     # Local_Main_Directory = input("Paste Folder Location of .bat files for conversion:")
@@ -253,19 +311,19 @@ def main(Local_Main_Directory):
 
     # Run the HELPER_ResetTestFiles.py Script
     print("Copying files to test directory")
-    reset.main()
+    # reset.main()
+    #
+    Rad_Files_For_transfer = radFilesForTransfer(Local_Main_Directory)
+    print(Rad_Files_For_transfer)
+    dict = getParallelDictionaryForFilePrep(Local_Main_Directory)
 
-    # Rad_Files_For_Transfer = prepareFileTransfer(Local_Main_Directory)
-
-
-
-
-
-    # MULTITHREADED VERSION OF PREPARE FILES FOR TRANSFER
+    # # MULTITHREADED VERSION OF PREPARE FILES FOR TRANSFER
     jobs = []
-    for i in range(50):
+    print("multithreading")
+    num_sim_hours = (len(os.listdir(Local_Main_Directory)))
+    for i in range(num_sim_hours):
         p = multiprocessing.Process(target=prepareFileTransfer,
-                                    args=(Local_Main_Directory))
+                                    args=(dict,i))
 
         jobs.append(p)
         p.start()
@@ -273,66 +331,74 @@ def main(Local_Main_Directory):
     for job in jobs:
         job.join()
 
-
-
-
-
-
-    # Get the count and IP addresses of the currently assigned VM's
-    vm_count = GET_VMCount()
-    vm_IP_List = GET_VMIP()
-    sms_main = sms.SMS()
-    login_main = Login()
-    print(type(login_main))
-
-    # Get number of sim hours that will go to each VM
-    directory_contents = sorted([f for f in os.listdir(Local_Main_Directory) if not f.startswith('.')], key=lambda f: f.lower())
-    chunk_size = math.ceil(len(directory_contents) / vm_count)
-
-    # Look more into how this works, but this will split the folder names into even chunks based on the number of VMs
-    # https://stackoverflow.com/questions/312443/how-do-you-split-a-list-into-evenly-sized-chunks
-    divideIntoMachineGroups = [directory_contents[i:i + chunk_size] for i in range(0, len(directory_contents), chunk_size)]
-
-    # print(vm_count)
-    # print(len(divideIntoMachineGroups))
-
-    # # Single Threaded version
+    #
+    #
+    #
+    #
+    #
+    # # Get the count and IP addresses of the currently assigned VM's
+    # vm_count = GET_VMCount()
+    # vm_IP_List = GET_VMIP()
+    # sms_main = sms.SMS()
+    # login_main = Login()
+    # print(type(login_main))
+    #
+    # # Get number of sim hours that will go to each VM
+    # directory_contents = sorted([f for f in os.listdir(Local_Main_Directory) if not f.startswith('.')], key=lambda f: f.lower())
+    # chunk_size = math.ceil(len(directory_contents) / vm_count)
+    #
+    # # Look more into how this works, but this will split the folder names into even chunks based on the number of VMs
+    # # https://stackoverflow.com/questions/312443/how-do-you-split-a-list-into-evenly-sized-chunks
+    # divideIntoMachineGroups = [directory_contents[i:i + chunk_size] for i in range(0, len(directory_contents), chunk_size)]
+    #
+    # # print(vm_count)
+    # # print(len(divideIntoMachineGroups))
+    #
+    # # # Single Threaded version
+    # # for i in range(vm_count):
+    # #     sendFilesToAzureAndLaunch(Rad_Files_For_Transfer,
+    # #                               Azure_Main_Directory,
+    # #                               Local_Main_Directory,
+    # #                               vm_IP_List,
+    # #                               divideIntoMachineGroups,
+    # #                               i)
+    #
+    #
+    #
+    # # Multithreaded version of SEND ALL FILES TO AZURE AND RUN
+    # jobs = []
     # for i in range(vm_count):
-    #     sendFilesToAzureAndLaunch(Rad_Files_For_Transfer,
-    #                               Azure_Main_Directory,
-    #                               Local_Main_Directory,
-    #                               vm_IP_List,
-    #                               divideIntoMachineGroups,
-    #                               i)
-
-
-
-    # Multithreaded version of SEND ALL FILES TO AZURE AND RUN
-    jobs = []
-    for i in range(vm_count):
-        p = multiprocessing.Process(target=sendFilesToAzureAndLaunch,
-                                    args=(Rad_Files_For_Transfer,
-                                          Azure_Main_Directory,
-                                          Local_Main_Directory,
-                                          vm_IP_List,
-                                          divideIntoMachineGroups,
-                                          i))
-        jobs.append(p)
-        p.start()
-
-    for job in jobs:
-        job.join()
-
-    print("All Simulations complete\n")
-    sms_main.SimulationsComplete(login_main)
-
-    for i in range(vm_count):
-        collectHDRfiles(Azure_Main_Directory,vm_IP_List,i)
-    print("HDR files copied back to local machine\n")
-    sms_main.HDRsCopied(login_main)
+    #     p = multiprocessing.Process(target=sendFilesToAzureAndLaunch,
+    #                                 args=(Rad_Files_For_Transfer,
+    #                                       Azure_Main_Directory,
+    #                                       Local_Main_Directory,
+    #                                       vm_IP_List,
+    #                                       divideIntoMachineGroups,
+    #                                       i))
+    #     jobs.append(p)
+    #     p.start()
+    #
+    # for job in jobs:
+    #     job.join()
+    #
+    # print("All Simulations complete\n")
+    # sms_main.SimulationsComplete(login_main)
+    #
+    # for i in range(vm_count):
+    #     collectHDRfiles(Azure_Main_Directory,vm_IP_List,i)
+    # print("HDR files copied back to local machine\n")
+    # sms_main.HDRsCopied(login_main)
 
 
 
 # For testing this individual file:
+Local_Main_Directory = r"C:\Users\pferrer\Desktop\test"
+Local_Repo_Directory = r"C:\Users\pferrer\PycharmProjects\AZURE_Testing"
 # Local_Main_Directory = "/Users/paulferrer/Desktop/DGP_TestFiles"
-# main(Local_Main_Directory)
+if __name__ == "__main__":
+    main(Local_Main_Directory)
+
+# # radFilesForTransfer(Local_Main_Directory)
+# dict = getParallelDictionaryForFilePrep(Local_Main_Directory)
+# print(dict)
+# prepareFileTransfer(dict,1)
