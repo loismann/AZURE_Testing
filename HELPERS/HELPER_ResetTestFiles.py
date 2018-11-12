@@ -1,7 +1,8 @@
 import shutil
 
 # Windows
-Backup_Directory = r"C:\ladybug\AzurePFGlareTesting"
+# Backup_Directory = r"C:\ladybug\AzurePFGlareTesting"n
+Backup_Directory = r"C:\Users\pferrer\Desktop\TestBackup"
 Main_Directory = r"C:\Users\pferrer\Desktop\test"
 CopiedHDR_Directory = r"C:\Users\pferrer\Desktop\TEST_CopiedHDRfiles"
 

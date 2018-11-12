@@ -28,7 +28,6 @@ class Convert:
     # This converts the bat files to shell files
     def bat_to_sh_DGP(self, file_path):
         sh_file = file_path[:-4] + '.sh'
-        print(file_path)
         with open(file_path, 'r') as infile, open(sh_file, 'w') as outfile:
             outfile.write('#!/usr/bin/env bash\n')
             for i,line in enumerate(infile):
@@ -189,7 +188,7 @@ def prepareFileTransfer(filePrepDict,i):
     # These variables will hold a copy of the rad files
 
     convert = Convert()
-    print("Running File Conversion on New Folder")
+    print("Running bat/sh File Conversion on sim-hour: " + str(i + 1))
     folder_path = filePrepDict[i]
     # walk through the folder paths to find the file path
 
@@ -199,6 +198,8 @@ def prepareFileTransfer(filePrepDict,i):
             if file_path.endswith(".bat"):
                 convert.bat_to_sh_DGP(file_path)
                 convert.sarithFixFile(folder_path)
+                os.remove(file_path)
+            elif file_path.endswith(".rad"):
                 os.remove(file_path)
 
 
@@ -269,23 +270,23 @@ def sftp_walk(remotepath,sftp):
         for x in sftp_walk(new_path,sftp):
             yield x
 
-def collectHDRfiles(Azure_Main_Directory,vm_IP_List,i):
+def collectHDRfiles(Azure_Main_Directory,vm_IP_List,i,Local_HDR_Directory):
     IP = vm_IP_List[i]
     login = Login()
     transport = paramiko.Transport((IP, 22))
     transport.connect(username=login.ADMIN_NAME, password=login.ADMIN_PSWD)
     sftp = paramiko.SFTPClient.from_transport(transport)
-
-
-    for path,files  in sftp_walk(Azure_Main_Directory, sftp):
-        for file in files:
-
-            # if os.path.split(file)[1] ==
-            if file.endswith(".HDR") and file[-5] != "0":
-                # print(file)
-                #sftp.get(remote, local) line for dowloading.
-                sftp.get(os.path.join(os.path.join(path,file)), "/Users/paulferrer/Desktop/TEST/" + file)
-                # print("/Users/paulferrer/Desktop/TEST/" + file)
+    # print(sftp_walk(Azure_Main_Directory,sftp))
+    sftp.get(Azure_Main_Directory + "/finishedHDRs.zip",Local_HDR_Directory + "\\finishedHDRs_Machine_" + str(i) + ".zip")
+    print(Azure_Main_Directory + "/finishedHDRs.zip")
+        # print(files)
+    # #
+    #         # if os.path.split(file)[1] ==
+    #         if file.endswith(".HDR") and file[-5] != "0":
+    #             # print(file)
+    #             #sftp.get(remote, local) line for dowloading.
+    #             sftp.get(os.path.join(os.path.join(path,file)), Local_HDR_Directory + file)
+    #             # print("/Users/paulferrer/Desktop/TEST/" + file)
 
 
 
@@ -295,7 +296,7 @@ def collectHDRfiles(Azure_Main_Directory,vm_IP_List,i):
 
 ###############################################  DEFINE THE MAIN FUNCTION  ###########################################
 
-def main(Local_Main_Directory):
+def main(Local_Main_Directory,Local_HDR_Directory):
     # ALL MULTITHREADING LOGIC TAKES PLACE HERE.  EACH OF THE FUNCTIONS REPRESENTS OPERATION ON A SINGLE ELEMENT
 
 
@@ -313,36 +314,38 @@ def main(Local_Main_Directory):
     print("Copying files to test directory")
     # reset.main()
     #
-    Rad_Files_For_transfer = radFilesForTransfer(Local_Main_Directory)
-    print(Rad_Files_For_transfer)
+    Rad_Files_For_Transfer = radFilesForTransfer(Local_Main_Directory)
+    print(Rad_Files_For_Transfer)
     dict = getParallelDictionaryForFilePrep(Local_Main_Directory)
 
     # # MULTITHREADED VERSION OF PREPARE FILES FOR TRANSFER
-    jobs = []
-    print("multithreading")
-    num_sim_hours = (len(os.listdir(Local_Main_Directory)))
-    for i in range(num_sim_hours):
-        p = multiprocessing.Process(target=prepareFileTransfer,
-                                    args=(dict,i))
+    # jobs = []
+    # print("multithreading")
+    # hourcount = 0
+    # for item in os.listdir(Local_Main_Directory):
+    #     if os.path.isdir(os.path.join(Local_Main_Directory,item)):
+    #         hourcount += 1
+    # for i in range(hourcount):
+    #     p = multiprocessing.Process(target=prepareFileTransfer,
+    #                                 args=(dict,i))
+    #
+    #     jobs.append(p)
+    #     p.start()
+    #
+    # for job in jobs:
+    #     job.join()
 
-        jobs.append(p)
-        p.start()
-
-    for job in jobs:
-        job.join()
-
     #
     #
     #
     #
     #
-    # # Get the count and IP addresses of the currently assigned VM's
-    # vm_count = GET_VMCount()
-    # vm_IP_List = GET_VMIP()
+    # Get the count and IP addresses of the currently assigned VM's
+    vm_count = GET_VMCount()
+    vm_IP_List = GET_VMIP()
     # sms_main = sms.SMS()
     # login_main = Login()
-    # print(type(login_main))
-    #
+    # # print(type(login_main))
     # # Get number of sim hours that will go to each VM
     # directory_contents = sorted([f for f in os.listdir(Local_Main_Directory) if not f.startswith('.')], key=lambda f: f.lower())
     # chunk_size = math.ceil(len(directory_contents) / vm_count)
@@ -351,23 +354,14 @@ def main(Local_Main_Directory):
     # # https://stackoverflow.com/questions/312443/how-do-you-split-a-list-into-evenly-sized-chunks
     # divideIntoMachineGroups = [directory_contents[i:i + chunk_size] for i in range(0, len(directory_contents), chunk_size)]
     #
-    # # print(vm_count)
-    # # print(len(divideIntoMachineGroups))
-    #
-    # # # Single Threaded version
-    # # for i in range(vm_count):
-    # #     sendFilesToAzureAndLaunch(Rad_Files_For_Transfer,
-    # #                               Azure_Main_Directory,
-    # #                               Local_Main_Directory,
-    # #                               vm_IP_List,
-    # #                               divideIntoMachineGroups,
-    # #                               i)
-    #
-    #
-    #
+    # print(vm_count)
+    # print(len(divideIntoMachineGroups))
+
     # # Multithreaded version of SEND ALL FILES TO AZURE AND RUN
     # jobs = []
     # for i in range(vm_count):
+    #
+    #     print("Transferring data to machine: " + str(i + 1))
     #     p = multiprocessing.Process(target=sendFilesToAzureAndLaunch,
     #                                 args=(Rad_Files_For_Transfer,
     #                                       Azure_Main_Directory,
@@ -380,24 +374,25 @@ def main(Local_Main_Directory):
     #
     # for job in jobs:
     #     job.join()
-    #
-    # print("All Simulations complete\n")
+
+    print("All Simulations complete\n")
     # sms_main.SimulationsComplete(login_main)
     #
-    # for i in range(vm_count):
-    #     collectHDRfiles(Azure_Main_Directory,vm_IP_List,i)
-    # print("HDR files copied back to local machine\n")
+    for i in range(vm_count):
+        collectHDRfiles(Azure_Main_Directory,vm_IP_List,i,Local_HDR_Directory)
+    print("HDR files copied back to local machine\n")
     # sms_main.HDRsCopied(login_main)
 
 
 
-# For testing this individual file:
+# # For testing this individual file:
 Local_Main_Directory = r"C:\Users\pferrer\Desktop\test"
 Local_Repo_Directory = r"C:\Users\pferrer\PycharmProjects\AZURE_Testing"
-# Local_Main_Directory = "/Users/paulferrer/Desktop/DGP_TestFiles"
+Local_HDR_Directory = r"C:\Users\pferrer\Desktop\TEST_CopiedHDRfiles"
+# # Local_Main_Directory = "/Users/paulferrer/Desktop/DGP_TestFiles"
 if __name__ == "__main__":
-    main(Local_Main_Directory)
-
+    main(Local_Main_Directory,Local_HDR_Directory)
+#
 # # radFilesForTransfer(Local_Main_Directory)
 # dict = getParallelDictionaryForFilePrep(Local_Main_Directory)
 # print(dict)

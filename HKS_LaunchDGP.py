@@ -2,6 +2,7 @@ import subprocess
 import os
 import time
 from collections import defaultdict
+import shutil
 
 ##### Functions
 
@@ -139,5 +140,23 @@ if __name__ == "__main__":
             # Deep Breath.... Run all the batch files
             RUN_BatchFiles(params.get('initBatchFileName'),params.get('supportingBatchFiles'), params.get('pcompBatchFile'))
 
-    # Collect the results of the sims
+    # # Collect the results of the sims
+    collectedHDRdirectory = Main_Directory + "/" + "CollectedHDRfiles"
 
+    # Maybe add something here to delete a previously existing copy of the directory
+    # This would prevent me having to manually delete the existing directory before running a new test
+    # if os.path.exists(collectedHDRdirectory):
+    #     shutil.rmtree(collectedHDRdirectory)
+
+
+    os.mkdir(collectedHDRdirectory)
+    print("Moving finished HDR files to single location ")
+    for root, dirs, files in os.walk(Main_Directory):
+        for file in files:
+            if file.endswith(".HDR") and file[-5] != "0":
+                nestedlocation = os.path.join(root,file)
+                shutil.move(nestedlocation,collectedHDRdirectory)
+
+    print("zipping HDR files")
+    output_filename = Main_Directory + "/" + "finishedHDRs"
+    shutil.make_archive(output_filename, 'zip', collectedHDRdirectory)
