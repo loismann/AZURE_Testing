@@ -69,7 +69,6 @@ def generate_vm(Generate_VM,i):
         # Write out the local IP to a reference file
 
         IP_File.write("VM_" + str(i) + "_Local_IP = " + private_IP + "\n")
-        sms.FoundIP(i,login)
         IP_File.close()
 
     else:

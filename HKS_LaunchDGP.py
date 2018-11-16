@@ -145,18 +145,33 @@ if __name__ == "__main__":
 
     # Maybe add something here to delete a previously existing copy of the directory
     # This would prevent me having to manually delete the existing directory before running a new test
-    # if os.path.exists(collectedHDRdirectory):
-    #     shutil.rmtree(collectedHDRdirectory)
-
-
+    if os.path.exists(collectedHDRdirectory):
+        shutil.rmtree(collectedHDRdirectory)
+    #
+    #
+    print("Moving the HDR files into a single folder")
     os.mkdir(collectedHDRdirectory)
     print("Moving finished HDR files to single location ")
+    hdr_list = []
     for root, dirs, files in os.walk(Main_Directory):
+        counter = 0
         for file in files:
             if file.endswith(".HDR") and file[-5] != "0":
-                nestedlocation = os.path.join(root,file)
-                shutil.move(nestedlocation,collectedHDRdirectory)
-
+                collectedLocation = os.path.join(collectedHDRdirectory,file)
+                nestedlocation = os.path.join(root, file)
+                hdr_list.append(nestedlocation)
+    #
+    for file in hdr_list:
+        base = os.path.basename(file)
+        root = collectedHDRdirectory
+        newlocaction = os.path.join(root,base)
+        shutil.copy(file,newlocaction)
+    time.sleep(3)
     print("zipping HDR files")
     output_filename = Main_Directory + "/" + "finishedHDRs"
-    shutil.make_archive(output_filename, 'zip', collectedHDRdirectory)
+    print(output_filename)
+    print(collectedHDRdirectory)
+    shutil.make_archive(output_filename,"zip",collectedHDRdirectory)
+    #
+    print("waiting until files all zipped up")
+    time.sleep(5)

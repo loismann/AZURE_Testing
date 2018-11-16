@@ -1,6 +1,7 @@
 import paramiko
 import scp
 import paramiko
+import pysftp
 
 
 
@@ -51,3 +52,12 @@ class pf_ssh:
         scp_run.close()
         tr.close()
 
+    def checkForDirectory(self,IP_Address, username, password, directoryToCheck):
+        connection = pysftp.Connection(host=IP_Address,username=username,password=password)
+        try:
+            connection.chdir(directoryToCheck)
+            pathExists = True
+        except:
+            pathExists = False
+
+        return(pathExists)
