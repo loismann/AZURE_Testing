@@ -319,36 +319,36 @@ def main(Local_Main_Directory,Local_HDR_Directory):
     # At the same time, isolate a copy of the rad files outside the folder structure, and then
     # delete all the other rad files encountered in the folders
 
-    # Run the HELPER_ResetTestFiles.py Script
+    # # Run the HELPER_ResetTestFiles.py Script
     print("Copying files to test directory")
     reset.main()
-    #
+    # #
     Rad_Files_For_Transfer = radFilesForTransfer(Local_Main_Directory)
-    print(Rad_Files_For_Transfer)
-    dict = getParallelDictionaryForFilePrep(Local_Main_Directory)
+    # print(Rad_Files_For_Transfer)
+    # dict = getParallelDictionaryForFilePrep(Local_Main_Directory)
+    # #
+    # # # # MULTITHREADED VERSION OF PREPARE FILES FOR TRANSFER
+    # jobs_SendAndRun = []
+    # print("multithreading")
+    # hourcount = 0
+    # for item in os.listdir(Local_Main_Directory):
+    #     if os.path.isdir(os.path.join(Local_Main_Directory,item)):
+    #         hourcount += 1
+    # for i in range(hourcount):
+    #     p_sendAndRun = multiprocessing.Process(target=prepareFileTransfer,
+    #                                 args=(dict,i))
     #
-    # # # MULTITHREADED VERSION OF PREPARE FILES FOR TRANSFER
-    jobs_SendAndRun = []
-    print("multithreading")
-    hourcount = 0
-    for item in os.listdir(Local_Main_Directory):
-        if os.path.isdir(os.path.join(Local_Main_Directory,item)):
-            hourcount += 1
-    for i in range(hourcount):
-        p_sendAndRun = multiprocessing.Process(target=prepareFileTransfer,
-                                    args=(dict,i))
-
-        jobs_SendAndRun.append(p_sendAndRun)
-        p_sendAndRun.start()
+    #     jobs_SendAndRun.append(p_sendAndRun)
+    #     p_sendAndRun.start()
+    # #
+    # for job in jobs_SendAndRun:
+    #     job.join()
     #
-    for job in jobs_SendAndRun:
-        job.join()
-
-    #
-    #
-    #
-    #
-    #
+    # #
+    # #
+    # #
+    # #
+    # #
     # Get the count and IP addresses of the currently assigned VM's
     vm_count = GET_VMCount()
     vm_IP_List = GET_VMIP()
@@ -361,65 +361,65 @@ def main(Local_Main_Directory,Local_HDR_Directory):
     #
     # # Look more into how this works, but this will split the folder names into even chunks based on the number of VMs
     # # https://stackoverflow.com/questions/312443/how-do-you-split-a-list-into-evenly-sized-chunks
-    divideIntoMachineGroups = [directory_contents[i:i + chunk_size] for i in range(0, len(directory_contents), chunk_size)]
+    # divideIntoMachineGroups = [directory_contents[i:i + chunk_size] for i in range(0, len(directory_contents), chunk_size)]
 
     print(vm_count)
     print(len(divideIntoMachineGroups))
 
-    # Multithreaded version of SEND ALL FILES TO AZURE AND RUN
-    print("Running Multithreaded Send to Azure and Run")
-    print("sleeping... waiting for ip file to register?")
-    time.sleep(10)
-    jobs_SendAndRun = []
-    for i in range(vm_count):
-        print("Transferring data to machine: " + str(i + 1))
-        p_sendAndRun = multiprocessing.Process(target=sendFilesToAzureAndLaunch,
-                                    args=(Rad_Files_For_Transfer,
-                                          Azure_Main_Directory,
-                                          Local_Main_Directory,
-                                          vm_IP_List,
-                                          divideIntoMachineGroups,
-                                          i))
-        jobs_SendAndRun.append(p_sendAndRun)
-        p_sendAndRun.start()
-    for job in jobs_SendAndRun:
-        job.join()
-
-    sms_main.SimulationsComplete(login_main)
-
-    # Multithreaded version of Collect HDR
-    print("Running Multithreaded Collect HDR")
-    jobs_CollectHDR = []
-    for i in range(vm_count):
-        print("Collecting HDR files from machine: " + str(i + 1))
-        p_CollectHDR = multiprocessing.Process(target=collectHDRfiles,
-                                    args=(Azure_Main_Directory,
-                                          vm_IP_List,
-                                          i,
-                                          Local_HDR_Directory))
-        jobs_CollectHDR.append(p_CollectHDR)
-        p_CollectHDR.start()
-
-
-    for job in jobs_CollectHDR:
-        job.join()
-
-    sms_main.HDRsCopied(login_main)
-    print("All Simulations complete\n")
-    #
-    #
+    # # Multithreaded version of SEND ALL FILES TO AZURE AND RUN
+    # print("Running Multithreaded Send to Azure and Run")
+    # print("sleeping... waiting for ip file to register?")
+    # time.sleep(10)
+    # jobs_SendAndRun = []
     # for i in range(vm_count):
-    #     collectHDRfiles(Azure_Main_Directory,vm_IP_List,i,Local_HDR_Directory)
-    # print("HDR files copied back to local machine\n")
+    #     print("Transferring data to machine: " + str(i + 1))
+    #     p_sendAndRun = multiprocessing.Process(target=sendFilesToAzureAndLaunch,
+    #                                 args=(Rad_Files_For_Transfer,
+    #                                       Azure_Main_Directory,
+    #                                       Local_Main_Directory,
+    #                                       vm_IP_List,
+    #                                       divideIntoMachineGroups,
+    #                                       i))
+    #     jobs_SendAndRun.append(p_sendAndRun)
+    #     p_sendAndRun.start()
+    # for job in jobs_SendAndRun:
+    #     job.join()
     #
+    # sms_main.SimulationsComplete(login_main)
+
+    # # Multithreaded version of Collect HDR
+    # print("Running Multithreaded Collect HDR")
+    # jobs_CollectHDR = []
+    # for i in range(vm_count):
+    #     print("Collecting HDR files from machine: " + str(i + 1))
+    #     p_CollectHDR = multiprocessing.Process(target=collectHDRfiles,
+    #                                 args=(Azure_Main_Directory,
+    #                                       vm_IP_List,
+    #                                       i,
+    #                                       Local_HDR_Directory))
+    #     jobs_CollectHDR.append(p_CollectHDR)
+    #     p_CollectHDR.start()
+    #
+    #
+    # for job in jobs_CollectHDR:
+    #     job.join()
+    #
+    # sms_main.HDRsCopied(login_main)
+    # print("All Simulations complete\n")
+    # #
+    # #
+    # # for i in range(vm_count):
+    # #     collectHDRfiles(Azure_Main_Directory,vm_IP_List,i,Local_HDR_Directory)
+    # # print("HDR files copied back to local machine\n")
+    # #
 
 
 
-# # For testing this individual file:
+# For testing this individual file:
 # Local_Main_Directory = r"C:\Users\pferrer\Desktop\test"
 # Local_Repo_Directory = r"C:\Users\pferrer\PycharmProjects\AZURE_Testing"
 # Local_HDR_Directory = r"C:\Users\pferrer\Desktop\TEST_CopiedHDRfiles"
-# # Local_Main_Directory = "/Users/paulferrer/Desktop/DGP_TestFiles"
+# Local_Main_Directory = "/Users/paulferrer/Desktop/DGP_TestFiles"
 if __name__ == "__main__":
     main(Local_Main_Directory,Local_HDR_Directory)
 #
