@@ -155,8 +155,8 @@ def radFilesForTransfer(Local_Main_Directory):
             pass
 
     else:
-        print("file exists")
-
+        # print("file exists")
+        pass
 
 
     return Rad_Files_For_Transfer
@@ -235,33 +235,35 @@ def sendFilesToAzureAndLaunch(Rad_Files_For_Transfer,
 
     # Iterate through each folder and send the contents of the simulation files
     for folder in Folders_To_Send:
-        folderobject = os.path.join(Local_Main_Directory, folder)
-        if os.path.isdir(folderobject):
-            print("Machine " + str(i) + ": Copying folder: " + folder)
-        for root, dirs, files in os.walk(os.path.join(Local_Main_Directory, folder)):
-            for file in files:
-                if not file == ".DS_Store" and not file.endswith(".rad"):
-                    print("     " + file)
-                    original_file_path = os.path.join(root, file)
-                    ssh.sendCommand("mkdir ./new/" + folder)
-                    destination_file_path = Azure_Main_Directory + r"/" + folder + r"/" + file
-                    ssh.copyfilesSCP(IP, 22, login.ADMIN_NAME, login.ADMIN_PSWD, original_file_path,
-                                     destination_file_path)
-        # print()
-
-    sms_instance.DGPfilesCopiedToCloud(i, login)
-    # print("\n\n")
-
-    # Copy the "HKS_LaunchDGP.py" file to the remote system
-    original_file_path = HKS_LaunchDGP
-    destination_file_path = Azure_Main_Directory + "/" + original_file_path
-    ssh.copyfilesSCP(IP, 22, login.ADMIN_NAME, login.ADMIN_PSWD, original_file_path, destination_file_path)
-    # print(destination_file_path + " Copied to Azure")
-
-    # LAUNCH SIMULATIONS
-    ssh.sendCommand("python " + destination_file_path)
-    print("Simulations launched on Machine: " + str(i))
-    sms_instance.SimulationsStarted(i, login)
+        print(folder)
+        print()
+        # folderobject = os.path.join(Local_Main_Directory, folder)
+        # if os.path.isdir(folderobject):
+        #     print("Machine " + str(i) + ": Copying folder: " + folder)
+        # for root, dirs, files in os.walk(os.path.join(Local_Main_Directory, folder)):
+        #     for file in files:
+        #         if not file == ".DS_Store" and not file.endswith(".rad"):
+        #             print("     " + file)
+        #             original_file_path = os.path.join(root, file)
+        #             ssh.sendCommand("mkdir ./new/" + folder)
+        #             destination_file_path = Azure_Main_Directory + r"/" + folder + r"/" + file
+        #             ssh.copyfilesSCP(IP, 22, login.ADMIN_NAME, login.ADMIN_PSWD, original_file_path,
+        #                              destination_file_path)
+        # # print()
+    #
+    # sms_instance.DGPfilesCopiedToCloud(i, login)
+    # # print("\n\n")
+    #
+    # # Copy the "HKS_LaunchDGP.py" file to the remote system
+    # original_file_path = HKS_LaunchDGP
+    # destination_file_path = Azure_Main_Directory + "/" + original_file_path
+    # ssh.copyfilesSCP(IP, 22, login.ADMIN_NAME, login.ADMIN_PSWD, original_file_path, destination_file_path)
+    # # print(destination_file_path + " Copied to Azure")
+    #
+    # # LAUNCH SIMULATIONS
+    # ssh.sendCommand("python " + destination_file_path)
+    # print("Simulations launched on Machine: " + str(i))
+    # sms_instance.SimulationsStarted(i, login)
 
 def sftp_walk(remotepath,sftp):
     path=remotepath
@@ -321,28 +323,28 @@ def main(Local_Main_Directory,Local_HDR_Directory):
 
     # # Run the HELPER_ResetTestFiles.py Script
     print("Copying files to test directory")
-    reset.main()
+    # reset.main()
     # #
     Rad_Files_For_Transfer = radFilesForTransfer(Local_Main_Directory)
     # print(Rad_Files_For_Transfer)
-    # dict = getParallelDictionaryForFilePrep(Local_Main_Directory)
-    # #
-    # # # # MULTITHREADED VERSION OF PREPARE FILES FOR TRANSFER
-    # jobs_SendAndRun = []
-    # print("multithreading")
-    # hourcount = 0
-    # for item in os.listdir(Local_Main_Directory):
-    #     if os.path.isdir(os.path.join(Local_Main_Directory,item)):
-    #         hourcount += 1
-    # for i in range(hourcount):
-    #     p_sendAndRun = multiprocessing.Process(target=prepareFileTransfer,
-    #                                 args=(dict,i))
+    dict = getParallelDictionaryForFilePrep(Local_Main_Directory)
     #
-    #     jobs_SendAndRun.append(p_sendAndRun)
-    #     p_sendAndRun.start()
-    # #
-    # for job in jobs_SendAndRun:
-    #     job.join()
+    # # # MULTITHREADED VERSION OF PREPARE FILES FOR TRANSFER
+    jobs_SendAndRun = []
+    print("Now running multithreaded version of prepare files for transfer")
+    hourcount = 0
+    for item in os.listdir(Local_Main_Directory):
+        if os.path.isdir(os.path.join(Local_Main_Directory,item)):
+            hourcount += 1
+    for i in range(hourcount):
+        p_sendAndRun = multiprocessing.Process(target=prepareFileTransfer,
+                                    args=(dict,i))
+
+        jobs_SendAndRun.append(p_sendAndRun)
+        p_sendAndRun.start()
+    #
+    for job in jobs_SendAndRun:
+        job.join()
     #
     # #
     # #
@@ -361,10 +363,10 @@ def main(Local_Main_Directory,Local_HDR_Directory):
     #
     # # Look more into how this works, but this will split the folder names into even chunks based on the number of VMs
     # # https://stackoverflow.com/questions/312443/how-do-you-split-a-list-into-evenly-sized-chunks
-    # divideIntoMachineGroups = [directory_contents[i:i + chunk_size] for i in range(0, len(directory_contents), chunk_size)]
+    divideIntoMachineGroups = [directory_contents[i:i + chunk_size] for i in range(0, len(directory_contents), chunk_size)]
 
-    print(vm_count)
-    print(len(divideIntoMachineGroups))
+    print("\nThis is now the PrepDGP file")
+    print("Number of VMs detected: " + str(vm_count))
 
     # # Multithreaded version of SEND ALL FILES TO AZURE AND RUN
     # print("Running Multithreaded Send to Azure and Run")

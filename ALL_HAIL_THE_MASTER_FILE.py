@@ -7,7 +7,7 @@ import HKS_PrepDGP as launch_sims
 
 
 # Where are the Honeybee Files?
-Local_Main_Directory = r"C:\Users\pferrer\Desktop\test"
+Local_Main_Directory = r"C:\Users\pferrer\Desktop\DGP_Cam1"
 # Local_Main_Directory = "/Users/paulferrer/Desktop/DGP_TestFiles"
 
 # Where is the code stored? (This is needed to point to the Local_IP_Address file)
