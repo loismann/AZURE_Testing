@@ -7,15 +7,13 @@ import HKS_PrepDGP as launch_sims
 
 
 # Where are the Honeybee Files?
-Local_Main_Directory = r"C:\Users\pferrer\Desktop\DGP_Cam1"
-# Local_Main_Directory = "/Users/paulferrer/Desktop/DGP_TestFiles"
+Local_Main_Directory = None
 
 # Where is the code stored? (This is needed to point to the Local_IP_Address file)
-# Local_Repo_Directory = "/Users/paulferrer/PycharmProjects/Azure_Testing/AZURE_Testing/HELPERS/"
-Local_Repo_Directory = r"C:\Users\pferrer\PycharmProjects\AZURE_Testing"
+Local_Repo_Directory = None
 
 # Where are the HDR files going to be copied back to the local computeR?
-Local_HDR_Directory = r"C:\Users\pferrer\Desktop\TEST_CopiedHDRfiles"
+Local_HDR_Directory = None
 
 # How Many Virtual Machines do you want?
 vm_count = 2

@@ -4,10 +4,10 @@ import time
 import pathlib
 
 # Windows
-# Backup_Directory = r"C:\ladybug\AzurePFGlareTesting"n
-Backup_Directory = r"C:\ladybug\AzurePFGlareTesting"
-Main_Directory = r"C:\Users\pferrer\Desktop\DGP_Cam1"
-CopiedHDR_Directory = r"C:\Users\pferrer\Desktop\TEST_CopiedHDRfiles"
+
+Backup_Directory = None
+Main_Directory = None
+CopiedHDR_Directory = None
 
 #Mac
 # Main_Directory = "/Users/paulferrer/Desktop/DGP_TestFiles"
