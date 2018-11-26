@@ -234,9 +234,10 @@ def sendFilesToAzureAndLaunch(Rad_Files_For_Transfer,
         ssh.copyfilesSCP(IP, 22, login.ADMIN_NAME, login.ADMIN_PSWD, original_file_path, destination_file_path)
 
     # Iterate through each folder and send the contents of the simulation files
+    print(len(Folders_To_Send))
     for folder in Folders_To_Send:
-        print(folder)
-        print()
+        # print(folder)
+        pass
         # folderobject = os.path.join(Local_Main_Directory, folder)
         # if os.path.isdir(folderobject):
         #     print("Machine " + str(i) + ": Copying folder: " + folder)
@@ -314,7 +315,7 @@ def main(Local_Main_Directory,Local_HDR_Directory):
     Azure_Main_Directory = "/home/pferrer/new"
     ##### Various Locations for Main Direcotry dependent upon testing environment
     # Local_Main_Directory = input("Paste Folder Location of .bat files for conversion:")
-    Local_Main_Directory = r"C:\Users\pferrer\Desktop\test"
+
 
 
     # Walk the Directory and Convert the batch files
@@ -329,22 +330,29 @@ def main(Local_Main_Directory,Local_HDR_Directory):
     # print(Rad_Files_For_Transfer)
     dict = getParallelDictionaryForFilePrep(Local_Main_Directory)
     #
-    # # # MULTITHREADED VERSION OF PREPARE FILES FOR TRANSFER
-    jobs_SendAndRun = []
-    print("Now running multithreaded version of prepare files for transfer")
-    hourcount = 0
-    for item in os.listdir(Local_Main_Directory):
-        if os.path.isdir(os.path.join(Local_Main_Directory,item)):
-            hourcount += 1
-    for i in range(hourcount):
-        p_sendAndRun = multiprocessing.Process(target=prepareFileTransfer,
-                                    args=(dict,i))
 
-        jobs_SendAndRun.append(p_sendAndRun)
-        p_sendAndRun.start()
+
+
+    # # # # MULTITHREADED VERSION OF PREPARE FILES FOR TRANSFER
+    # jobs_SendAndRun = []
+    # print("Now running multithreaded version of prepare files for transfer")
+    # hourcount = 0
+    # for item in os.listdir(Local_Main_Directory):
+    #     if os.path.isdir(os.path.join(Local_Main_Directory,item)):
+    #         hourcount += 1
+    # for i in range(hourcount):
+    #     p_sendAndRun = multiprocessing.Process(target=prepareFileTransfer,
+    #                                 args=(dict,i))
     #
-    for job in jobs_SendAndRun:
-        job.join()
+    #     jobs_SendAndRun.append(p_sendAndRun)
+    #     p_sendAndRun.start()
+    # #
+    # for job in jobs_SendAndRun:
+    #     job.join()
+
+
+
+
     #
     # #
     # #
@@ -368,24 +376,24 @@ def main(Local_Main_Directory,Local_HDR_Directory):
     print("\nThis is now the PrepDGP file")
     print("Number of VMs detected: " + str(vm_count))
 
-    # # Multithreaded version of SEND ALL FILES TO AZURE AND RUN
-    # print("Running Multithreaded Send to Azure and Run")
-    # print("sleeping... waiting for ip file to register?")
-    # time.sleep(10)
-    # jobs_SendAndRun = []
-    # for i in range(vm_count):
-    #     print("Transferring data to machine: " + str(i + 1))
-    #     p_sendAndRun = multiprocessing.Process(target=sendFilesToAzureAndLaunch,
-    #                                 args=(Rad_Files_For_Transfer,
-    #                                       Azure_Main_Directory,
-    #                                       Local_Main_Directory,
-    #                                       vm_IP_List,
-    #                                       divideIntoMachineGroups,
-    #                                       i))
-    #     jobs_SendAndRun.append(p_sendAndRun)
-    #     p_sendAndRun.start()
-    # for job in jobs_SendAndRun:
-    #     job.join()
+    # Multithreaded version of SEND ALL FILES TO AZURE AND RUN
+    print("Running Multithreaded Send to Azure and Run")
+    print("sleeping... waiting for ip file to register?")
+    time.sleep(10)
+    jobs_SendAndRun = []
+    for i in range(vm_count):
+        print("Transferring data to machine: " + str(i + 1))
+        p_sendAndRun = multiprocessing.Process(target=sendFilesToAzureAndLaunch,
+                                    args=(Rad_Files_For_Transfer,
+                                          Azure_Main_Directory,
+                                          Local_Main_Directory,
+                                          vm_IP_List,
+                                          divideIntoMachineGroups,
+                                          i))
+        jobs_SendAndRun.append(p_sendAndRun)
+        p_sendAndRun.start()
+    for job in jobs_SendAndRun:
+        job.join()
     #
     # sms_main.SimulationsComplete(login_main)
 
