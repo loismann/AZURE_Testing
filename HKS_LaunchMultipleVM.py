@@ -67,7 +67,7 @@ def generate_vm(Generate_VM,i):
         # Get the private IP address of the newly created VM
         private_IP = core.getPrivateIpAddress(mgmt.network_client(login),i, login)
         # Write out the local IP to a reference file
-`
+
         IP_File.write("VM_" + str(i) + "_Local_IP = " + private_IP + "\n")
         IP_File.close()
 

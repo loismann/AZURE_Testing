@@ -313,9 +313,6 @@ def main(Local_Main_Directory,Local_HDR_Directory):
 
 
     Azure_Main_Directory = "/home/pferrer/new"
-    ##### Various Locations for Main Direcotry dependent upon testing environment
-    # Local_Main_Directory = input("Paste Folder Location of .bat files for conversion:")
-
 
 
     # Walk the Directory and Convert the batch files
@@ -324,7 +321,7 @@ def main(Local_Main_Directory,Local_HDR_Directory):
 
     # # Run the HELPER_ResetTestFiles.py Script
     print("Copying files to test directory")
-    # reset.main()
+    reset.main()
     # #
     Rad_Files_For_Transfer = radFilesForTransfer(Local_Main_Directory)
     # print(Rad_Files_For_Transfer)
@@ -351,14 +348,6 @@ def main(Local_Main_Directory,Local_HDR_Directory):
     #     job.join()
 
 
-
-
-    #
-    # #
-    # #
-    # #
-    # #
-    # #
     # Get the count and IP addresses of the currently assigned VM's
     vm_count = GET_VMCount()
     vm_IP_List = GET_VMIP()
@@ -376,24 +365,24 @@ def main(Local_Main_Directory,Local_HDR_Directory):
     print("\nThis is now the PrepDGP file")
     print("Number of VMs detected: " + str(vm_count))
 
-    # Multithreaded version of SEND ALL FILES TO AZURE AND RUN
-    print("Running Multithreaded Send to Azure and Run")
-    print("sleeping... waiting for ip file to register?")
-    time.sleep(10)
-    jobs_SendAndRun = []
-    for i in range(vm_count):
-        print("Transferring data to machine: " + str(i + 1))
-        p_sendAndRun = multiprocessing.Process(target=sendFilesToAzureAndLaunch,
-                                    args=(Rad_Files_For_Transfer,
-                                          Azure_Main_Directory,
-                                          Local_Main_Directory,
-                                          vm_IP_List,
-                                          divideIntoMachineGroups,
-                                          i))
-        jobs_SendAndRun.append(p_sendAndRun)
-        p_sendAndRun.start()
-    for job in jobs_SendAndRun:
-        job.join()
+    # # Multithreaded version of SEND ALL FILES TO AZURE AND RUN
+    # print("Running Multithreaded Send to Azure and Run")
+    # print("sleeping... waiting for ip file to register?")
+    # time.sleep(10)
+    # jobs_SendAndRun = []
+    # for i in range(vm_count):
+    #     print("Transferring data to machine: " + str(i + 1))
+    #     p_sendAndRun = multiprocessing.Process(target=sendFilesToAzureAndLaunch,
+    #                                 args=(Rad_Files_For_Transfer,
+    #                                       Azure_Main_Directory,
+    #                                       Local_Main_Directory,
+    #                                       vm_IP_List,
+    #                                       divideIntoMachineGroups,
+    #                                       i))
+    #     jobs_SendAndRun.append(p_sendAndRun)
+    #     p_sendAndRun.start()
+    # for job in jobs_SendAndRun:
+    #     job.join()
     #
     # sms_main.SimulationsComplete(login_main)
 

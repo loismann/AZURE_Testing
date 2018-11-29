@@ -2,18 +2,12 @@ import shutil
 import os
 import time
 import pathlib
-import HELPERS.HELPER_Login_Info
+from HELPERS.HELPER_Login_Info import Login
 
-# Windows
-
-Backup_Directory = None
-Main_Directory = None
-CopiedHDR_Directory = None
-
-#Mac
-# Main_Directory = "/Users/paulferrer/Desktop/DGP_TestFiles"
-# Backup_Directory = "/Users/paulferrer/Desktop/DGP_TestFiles Originals"
-# CopiedHDR_Directory = "/Users/paulferrer/Desktop/TEST"
+login = Login()
+Backup_Directory = login.Backup_Directory
+Main_Directory = login.Local_Main_Directory
+CopiedHDR_Directory = login.Local_HDR_Directory
 
 def copytree(src, dst, symlinks=False, ignore=None):
     for item in os.listdir(src):
