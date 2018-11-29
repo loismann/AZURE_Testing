@@ -2,6 +2,8 @@ import HKS_DeleteAzureResources as delete
 import HKS_LaunchMultipleVM as launch_vm
 from HELPERS.HELPER_Login_Info import Login
 
+#Initialize Login Class
+login = Login()
 
 
 
@@ -15,7 +17,7 @@ Local_Repo_Directory = None
 Local_HDR_Directory = None
 
 # How Many Virtual Machines do you want?
-vm_count = 2
+vm_count = 1
 
 #Master ON/OFF switch
 Turn_On_All = True

@@ -7,7 +7,7 @@ import os
 
 
 
-
+login = Login()
 ################################################# Run Code #############################################################
 
 # Main method for HKS_DeleteAzureResources.py
@@ -17,7 +17,7 @@ def main(Local_Repo_Directory,Delete_VMs=True):
         print("running")
 
         #Initialize Login Information
-        login = Login()
+
 
         # Delete the resource group
         # Instantiate the management client class
@@ -68,5 +68,5 @@ def main(Local_Repo_Directory,Delete_VMs=True):
 
 
 # If you need to run this file as __Main__:
-# Local_Repo_Directory = r"C:\Users\pferrer\PycharmProjects\AZURE_Testing"
+# Local_Repo_Directory = login.Local_Repo_Directory
 # main(Local_Repo_Directory,True)
