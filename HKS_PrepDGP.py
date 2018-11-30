@@ -126,7 +126,6 @@ def radFilesForTransfer(Local_Main_Directory):
     Rad_Files_For_Transfer = []
 
     if not os.path.isfile(os.path.join(Local_Main_Directory, "Materials.rad")):
-        print("file doesnt exist")
         for root, dirs, files in os.walk(os.path.abspath(Local_Main_Directory)):
             if not os.path.isfile(os.path.join(root, "Materials.rad")):
                 for file in files:
@@ -301,13 +300,44 @@ def collectHDRfiles(Azure_Main_Directory,vm_IP_List,i,Local_HDR_Directory):
     #             sftp.get(os.path.join(os.path.join(path,file)), Local_HDR_Directory + file)
     #             # print("/Users/paulferrer/Desktop/TEST/" + file)
 
-def zipFilesAndDelete(original_file_paths, zip_file_paths, divideIntoMachineGroups):
+def zipFilesAndDelete(Local_Main_Directory, divideIntoMachineGroups, Rad_Files_For_Transfer):
+    # initializing empty file paths list
+    original_file_paths = []
+    zip_file_paths = []
+
+    # crawling through directory and subdirectories
+    for root, directories, files in os.walk(Local_Main_Directory):
+        for filename in files:
+            # join the two strings in order to form the full filepath.
+            if "rad" not in filename:
+                filepath = os.path.join(root, filename)
+                original_file_paths.append(filepath)
+                # Here is how i'm getting a location that keeps the local structure but not the original structure
+                # https://stackoverflow.com/questions/27844088/python-get-directory-two-levels-up
+                trimmed_pathsection = list(Path(filepath).parts[4:])
+                zip_file_paths.append(os.path.join(*trimmed_pathsection))
+
+    print("This is how many files we're transferring: " + str(len(original_file_paths)))
+    list_index_tracker = 0
+
     for i in range(len(divideIntoMachineGroups)):
-        myZipFile = zipfile.ZipFile("hours" + str(i) + ".zip","w")
         group = divideIntoMachineGroups[i]
-        print(len(group))
-        for j in range(len(group)):
-            myZipFile.write(original_file_paths[j],zip_file_paths[j])
+        with zipfile.ZipFile("hours_" + str(i) + ".zip", "a") as zip:
+            for j in range(len(group)*5):
+                zip.write(original_file_paths[list_index_tracker],zip_file_paths[list_index_tracker])
+                list_index_tracker += 1
+
+            # Delete all the folders to clean up the directory
+            for j in range(len(group)):
+                shutil.rmtree(os.path.normpath(group[j]))
+
+            # Add the rad files to the zip file
+            for file in Rad_Files_For_Transfer:
+                zip.write(file,os.path.basename(file))
+
+    # Delete the Rad files
+    for file in Rad_Files_For_Transfer:
+        os.remove(file)
 
 
 
@@ -325,19 +355,19 @@ def main(Local_Main_Directory,Local_HDR_Directory):
     # At the same time, isolate a copy of the rad files outside the folder structure, and then
     # delete all the other rad files encountered in the folders
 
-    # # Run the HELPER_ResetTestFiles.py Script
-    print("Copying files to test directory")
+    # Run the HELPER_ResetTestFiles.py Script
+    print("Copying files to test directory...")
+
+    # THIS DELETES ALL FILESS/FOLDERS IN THE TEST DIRECTORY AND THEN PUTS IN A FRESH COPY
     reset.main()
-    # #
+
     Rad_Files_For_Transfer = radFilesForTransfer(Local_Main_Directory)
-    print("These are the rad files for transfer: ")
-    print(Rad_Files_For_Transfer)
     hourly_list = getParallelDictionaryForFilePrep(Local_Main_Directory)
 
 
-
     # "Pool" MULTITHREADED VERSION OF PREPARE FOR TRANSFER
-    print("Now running 'pool' multithreaded version of prepare files for transfer")
+    print("Preparing files for transfer...")
+    print("Starting Timer...")
     start_time = time.time()
     hourcount = 0
     for item in os.listdir(Local_Main_Directory):
@@ -348,10 +378,7 @@ def main(Local_Main_Directory,Local_HDR_Directory):
     result=p_sendAndRun.map(prepareFileTransfer, hourly_list)
     p_sendAndRun.close()
     p_sendAndRun.join()
-
-    elapsed_time = int(time.time() - start_time)
-    print("Elaped Time: " + str(elapsed_time) + " seconds")
-
+    print("Files prepped for transfer")
 
 
 
@@ -381,25 +408,11 @@ def main(Local_Main_Directory,Local_HDR_Directory):
     # THE NUMBER OF VMs CURRENTLY IN USE
     # Change the Current Working directory to the Local Main Directory
     os.chdir(Local_Main_Directory)
+    zipFilesAndDelete(Local_Main_Directory, divideIntoMachineGroups, Rad_Files_For_Transfer)
 
-    # initializing empty file paths list
-    original_file_paths = []
-    zip_file_paths = []
-
-    # crawling through directory and subdirectories
-    for root, directories, files in os.walk(Local_Main_Directory):
-        for filename in files:
-            # join the two strings in order to form the full filepath.
-            if "rad" not in filename:
-                filepath = os.path.join(root, filename)
-                original_file_paths.append(filepath)
-                # Here is how i'm getting a location that keeps the local structure but not the original structure
-                # https://stackoverflow.com/questions/27844088/python-get-directory-two-levels-up
-                trimmed_pathsection = list(Path(filepath).parts[4:])
-                zip_file_paths.append(os.path.join(*trimmed_pathsection))
-
-    zipFilesAndDelete(original_file_paths, zip_file_paths, divideIntoMachineGroups)
-
+    # End of the timer
+    elapsed_time = int(time.time() - start_time)
+    print("Elaped Time: " + str(elapsed_time) + " seconds")
 
     # # Multithreaded version of SEND ALL FILES TO AZURE AND RUN
     # print("Running Multithreaded Send to Azure and Run")
