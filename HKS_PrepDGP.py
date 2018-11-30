@@ -12,7 +12,8 @@ import multiprocessing
 import paramiko
 from stat import S_ISDIR
 import HELPERS.HELPER_ResetTestFiles as reset
-
+import zipfile
+from pathlib import Path
 
 
 ###### Important Global Variables #########
@@ -109,9 +110,6 @@ def GET_VMIP():
         print("No copy of 'Local_IP_Addresses.py' found. Are VM's active?")
     return IP_Addresses
 
-
-
-
 # Need to turn the "prepare file transfer function into two functions.
 # The first will be a simple function that sets the rad files to be copied to each machine
 # The second one will be a function that runs the bat to sh process in parallel.
@@ -161,22 +159,26 @@ def radFilesForTransfer(Local_Main_Directory):
 
     return Rad_Files_For_Transfer
 
+# This has now been modified to return a list of folders instead of a dictionary.  The list works well with the "pool"
+# option of multithreading
 # This returns a dictionary that can be used to multithread the bat to sh process
 def getParallelDictionaryForFilePrep(Local_Main_Directory):
     filePrepDict = {}
+    filePrepList = []
     hourlyFolders = []
     counter = 0
     for root, dirs, files in os.walk(os.path.abspath(Local_Main_Directory)):
         if "image" not in root and "00" in root:
-            filePrepDict[counter] = root
+            filePrepList.append(root)
+            # filePrepDict[counter] = root
             # print(root)
             counter +=1
 
-    return filePrepDict
+    return filePrepList
 
 # This will convert batch files and strip/ rad files
 #  THIS IS THE NEW WORK IN PROGRESS and is now set to accept a single folder path
-def prepareFileTransfer(filePrepDict,i):
+def prepareFileTransfer(folder_path):
     """
     As an input, this function needs a dictionary that will determine how many processes to run this operation on
     the dictionary will have an index number as a "key" and a list of folder paths representing an even subdivision of the
@@ -188,8 +190,7 @@ def prepareFileTransfer(filePrepDict,i):
     # These variables will hold a copy of the rad files
 
     convert = Convert()
-    print("Running bat/sh File Conversion on sim-hour: " + str(i + 1))
-    folder_path = filePrepDict[i]
+    # print("Running bat/sh File Conversion on sim-hour: ")
     # walk through the folder paths to find the file path
 
     for root, dirs, files in (os.walk(folder_path)):
@@ -300,10 +301,15 @@ def collectHDRfiles(Azure_Main_Directory,vm_IP_List,i,Local_HDR_Directory):
     #             sftp.get(os.path.join(os.path.join(path,file)), Local_HDR_Directory + file)
     #             # print("/Users/paulferrer/Desktop/TEST/" + file)
 
+def zipFilesAndDelete(original_file_paths, zip_file_paths, divideIntoMachineGroups):
+    for i in range(len(divideIntoMachineGroups)):
+        myZipFile = zipfile.ZipFile("hours" + str(i) + ".zip","w")
+        group = divideIntoMachineGroups[i]
+        print(len(group))
+        for j in range(len(group)):
+            myZipFile.write(original_file_paths[j],zip_file_paths[j])
 
 
-# Local_Main_Directory = "/Users/paulferrer/Desktop/DGP_TestFiles"
-# Azure_Main_Directory = "/home/pferrer/new"
 
 
 ###############################################  DEFINE THE MAIN FUNCTION  ###########################################
@@ -324,28 +330,29 @@ def main(Local_Main_Directory,Local_HDR_Directory):
     reset.main()
     # #
     Rad_Files_For_Transfer = radFilesForTransfer(Local_Main_Directory)
-    # print(Rad_Files_For_Transfer)
-    dict = getParallelDictionaryForFilePrep(Local_Main_Directory)
-    #
+    print("These are the rad files for transfer: ")
+    print(Rad_Files_For_Transfer)
+    hourly_list = getParallelDictionaryForFilePrep(Local_Main_Directory)
 
 
 
-    # # # # MULTITHREADED VERSION OF PREPARE FILES FOR TRANSFER
-    # jobs_SendAndRun = []
-    # print("Now running multithreaded version of prepare files for transfer")
-    # hourcount = 0
-    # for item in os.listdir(Local_Main_Directory):
-    #     if os.path.isdir(os.path.join(Local_Main_Directory,item)):
-    #         hourcount += 1
-    # for i in range(hourcount):
-    #     p_sendAndRun = multiprocessing.Process(target=prepareFileTransfer,
-    #                                 args=(dict,i))
-    #
-    #     jobs_SendAndRun.append(p_sendAndRun)
-    #     p_sendAndRun.start()
-    # #
-    # for job in jobs_SendAndRun:
-    #     job.join()
+    # "Pool" MULTITHREADED VERSION OF PREPARE FOR TRANSFER
+    print("Now running 'pool' multithreaded version of prepare files for transfer")
+    start_time = time.time()
+    hourcount = 0
+    for item in os.listdir(Local_Main_Directory):
+        if os.path.isdir(os.path.join(Local_Main_Directory,item)):
+            hourcount += 1
+
+    p_sendAndRun = multiprocessing.Pool(15)
+    result=p_sendAndRun.map(prepareFileTransfer, hourly_list)
+    p_sendAndRun.close()
+    p_sendAndRun.join()
+
+    elapsed_time = int(time.time() - start_time)
+    print("Elaped Time: " + str(elapsed_time) + " seconds")
+
+
 
 
     # Get the count and IP addresses of the currently assigned VM's
@@ -355,15 +362,44 @@ def main(Local_Main_Directory,Local_HDR_Directory):
     login_main = Login()
     # # print(type(login_main))
     # # Get number of sim hours that will go to each VM
-    directory_contents = sorted([f for f in os.listdir(Local_Main_Directory) if not f.startswith('.')], key=lambda f: f.lower())
+    directory_contents = sorted([f for f in os.listdir(Local_Main_Directory) if not f.endswith('.rad')], key=lambda f: f.lower())
     chunk_size = math.ceil(len(directory_contents) / vm_count)
     #
     # # Look more into how this works, but this will split the folder names into even chunks based on the number of VMs
     # # https://stackoverflow.com/questions/312443/how-do-you-split-a-list-into-evenly-sized-chunks
     divideIntoMachineGroups = [directory_contents[i:i + chunk_size] for i in range(0, len(directory_contents), chunk_size)]
 
-    print("\nThis is now the PrepDGP file")
-    print("Number of VMs detected: " + str(vm_count))
+
+    # print("\nThis is now the PrepDGP file")
+    # print("Number of VMs detected: " + str(vm_count))
+    # print(divideIntoMachineGroups)
+    # for grouping in divideIntoMachineGroups:
+    #     print(len(grouping))
+
+
+    # THIS IS GOING TO TEST OUT ADDING ALL THESE FOLDERS INTO ARCHIVES.  IN A QUANTITY THAT MATCHES
+    # THE NUMBER OF VMs CURRENTLY IN USE
+    # Change the Current Working directory to the Local Main Directory
+    os.chdir(Local_Main_Directory)
+
+    # initializing empty file paths list
+    original_file_paths = []
+    zip_file_paths = []
+
+    # crawling through directory and subdirectories
+    for root, directories, files in os.walk(Local_Main_Directory):
+        for filename in files:
+            # join the two strings in order to form the full filepath.
+            if "rad" not in filename:
+                filepath = os.path.join(root, filename)
+                original_file_paths.append(filepath)
+                # Here is how i'm getting a location that keeps the local structure but not the original structure
+                # https://stackoverflow.com/questions/27844088/python-get-directory-two-levels-up
+                trimmed_pathsection = list(Path(filepath).parts[4:])
+                zip_file_paths.append(os.path.join(*trimmed_pathsection))
+
+    zipFilesAndDelete(original_file_paths, zip_file_paths, divideIntoMachineGroups)
+
 
     # # Multithreaded version of SEND ALL FILES TO AZURE AND RUN
     # print("Running Multithreaded Send to Azure and Run")

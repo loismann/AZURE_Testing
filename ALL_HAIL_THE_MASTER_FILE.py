@@ -2,6 +2,7 @@ import HKS_DeleteAzureResources as delete
 import HKS_LaunchMultipleVM as launch_vm
 from HELPERS.HELPER_Login_Info import Login
 import HKS_PrepDGP as launch_sims
+import time
 
 #Initialize Login Class
 login = Login()
@@ -39,3 +40,4 @@ if __name__ == "__main__":
     # Copy over files and run the simulations
     print("Copying Basefiles and Launching Main Calculations")
     launch_sims.main(Local_Main_Directory,Local_HDR_Directory)
+
