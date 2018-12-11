@@ -46,11 +46,11 @@ class Convert:
                                 replaced.append("rm")
                             elif ".rad" and "material" in segment:
                                 # print("Found the Material.rad file")
-                                redirection = "../Materials.rad"
+                                redirection = "../../Materials.rad"
                                 replaced.append(redirection)
                             elif ".rad" in segment and "material" not in segment:
                                 # print("Found the Object.rad file")
-                                redirection = "../Objects.rad"
+                                redirection = "../../Objects.rad"
                                 replaced.append(redirection)
                             elif ".sky" in segment:
                                 # print("Found a sky file")
@@ -204,18 +204,18 @@ def prepareFileTransfer(folder_path):
 
 
 # This performs all operations to get the files over to azure and then run them
-def sendFilesToAzureAndLaunch(Rad_Files_For_Transfer,
-                              Azure_Main_Directory,
-                              Local_Main_Directory,
-                              vm_IP_List,divideIntoMachineGroups,
-                              i):
+def sendFilesToAzureAndLaunch(Azure_Main_Directory,
+                              vm_IP_List,
+                              zipFilesForRemoteTransfer,
+                              ):
 
 
-    Folders_To_Send = divideIntoMachineGroups[i]
-    IP = vm_IP_List[i]
+
+    IP = vm_IP_List
     login = Login()
     ssh = pf_ssh(IP, 22, login.ADMIN_NAME, login.ADMIN_PSWD)
-    ssh.sendCommand("mkdir new")
+    print("Removing all folders in the 'new' directory to start fresh")
+    ssh.sendCommand("rm -r new")
     sms_instance = sms.SMS()
 
     # Might need to clear out the home directory first to help with testing:
@@ -223,47 +223,23 @@ def sendFilesToAzureAndLaunch(Rad_Files_For_Transfer,
     # if it does, delete it and then make it again
     print(IP)
     print(Azure_Main_Directory)
+
     ssh.sendCommand("mkdir new")
+    original_file_path = zipFilesForRemoteTransfer
+    destination_file_path = Azure_Main_Directory + r"/" + os.path.split(original_file_path)[1]
+    ssh.copyfilesSCP(IP, 22, login.ADMIN_NAME, login.ADMIN_PSWD, original_file_path, destination_file_path)
 
 
+    # Copy the "HKS_LaunchDGP.py" file to the remote system
+    original_file_path = os.path.join(login.Local_Repo_Directory,HKS_LaunchDGP)
+    destination_file_path = Azure_Main_Directory + "/" + HKS_LaunchDGP
+    ssh.copyfilesSCP(IP, 22, login.ADMIN_NAME, login.ADMIN_PSWD, original_file_path, destination_file_path)
+    print(destination_file_path + " Copied to Azure")
 
-    # Send the Rad Files (one for geometry and one for materials) separately
-    for radfile in Rad_Files_For_Transfer:
-        original_file_path = os.path.abspath(radfile)
-        destination_file_path = Azure_Main_Directory + r"/" + os.path.split(original_file_path)[1]
-        ssh.copyfilesSCP(IP, 22, login.ADMIN_NAME, login.ADMIN_PSWD, original_file_path, destination_file_path)
 
-    # Iterate through each folder and send the contents of the simulation files
-    print(len(Folders_To_Send))
-    for folder in Folders_To_Send:
-        # print(folder)
-        pass
-        # folderobject = os.path.join(Local_Main_Directory, folder)
-        # if os.path.isdir(folderobject):
-        #     print("Machine " + str(i) + ": Copying folder: " + folder)
-        # for root, dirs, files in os.walk(os.path.join(Local_Main_Directory, folder)):
-        #     for file in files:
-        #         if not file == ".DS_Store" and not file.endswith(".rad"):
-        #             print("     " + file)
-        #             original_file_path = os.path.join(root, file)
-        #             ssh.sendCommand("mkdir ./new/" + folder)
-        #             destination_file_path = Azure_Main_Directory + r"/" + folder + r"/" + file
-        #             ssh.copyfilesSCP(IP, 22, login.ADMIN_NAME, login.ADMIN_PSWD, original_file_path,
-        #                              destination_file_path)
-        # # print()
-    #
-    # sms_instance.DGPfilesCopiedToCloud(i, login)
-    # # print("\n\n")
-    #
-    # # Copy the "HKS_LaunchDGP.py" file to the remote system
-    # original_file_path = HKS_LaunchDGP
-    # destination_file_path = Azure_Main_Directory + "/" + original_file_path
-    # ssh.copyfilesSCP(IP, 22, login.ADMIN_NAME, login.ADMIN_PSWD, original_file_path, destination_file_path)
-    # # print(destination_file_path + " Copied to Azure")
-    #
-    # # LAUNCH SIMULATIONS
-    # ssh.sendCommand("python " + destination_file_path)
-    # print("Simulations launched on Machine: " + str(i))
+    # LAUNCH SIMULATIONS
+    ssh.sendCommand("python " + destination_file_path)
+    print("Simulations launched on Machine")
     # sms_instance.SimulationsStarted(i, login)
 
 def sftp_walk(remotepath,sftp):
@@ -314,7 +290,7 @@ def zipFilesAndDelete(Local_Main_Directory, divideIntoMachineGroups, Rad_Files_F
                 original_file_paths.append(filepath)
                 # Here is how i'm getting a location that keeps the local structure but not the original structure
                 # https://stackoverflow.com/questions/27844088/python-get-directory-two-levels-up
-                trimmed_pathsection = list(Path(filepath).parts[4:])
+                trimmed_pathsection = list(Path(filepath).parts[5:])
                 zip_file_paths.append(os.path.join(*trimmed_pathsection))
 
     print("This is how many files we're transferring: " + str(len(original_file_paths)))
@@ -359,22 +335,23 @@ def main(Local_Main_Directory,Local_HDR_Directory):
     print("Copying files to test directory...")
 
     # THIS DELETES ALL FILESS/FOLDERS IN THE TEST DIRECTORY AND THEN PUTS IN A FRESH COPY
+    # At this point you cant really turn off this function, it will mess up the hourly counting of the other functions
     reset.main()
 
+    print("All files copied to local directory and ready to process")
     Rad_Files_For_Transfer = radFilesForTransfer(Local_Main_Directory)
     hourly_list = getParallelDictionaryForFilePrep(Local_Main_Directory)
 
 
     # "Pool" MULTITHREADED VERSION OF PREPARE FOR TRANSFER
     print("Preparing files for transfer...")
-    print("Starting Timer...")
-    start_time = time.time()
+
     hourcount = 0
     for item in os.listdir(Local_Main_Directory):
         if os.path.isdir(os.path.join(Local_Main_Directory,item)):
             hourcount += 1
 
-    p_sendAndRun = multiprocessing.Pool(15)
+    p_sendAndRun = multiprocessing.Pool(multiprocessing.cpu_count())
     result=p_sendAndRun.map(prepareFileTransfer, hourly_list)
     p_sendAndRun.close()
     p_sendAndRun.join()
@@ -408,58 +385,72 @@ def main(Local_Main_Directory,Local_HDR_Directory):
     # THE NUMBER OF VMs CURRENTLY IN USE
     # Change the Current Working directory to the Local Main Directory
     os.chdir(Local_Main_Directory)
+    print("Generating Zip Files...")
     zipFilesAndDelete(Local_Main_Directory, divideIntoMachineGroups, Rad_Files_For_Transfer)
 
     # End of the timer
-    elapsed_time = int(time.time() - start_time)
-    print("Elaped Time: " + str(elapsed_time) + " seconds")
+    # elapsed_time = int(time.time() - start_time)
+    # print("Elapsed Time to prep and Zip all files: " + str(elapsed_time) + " seconds")
 
-    # # Multithreaded version of SEND ALL FILES TO AZURE AND RUN
-    # print("Running Multithreaded Send to Azure and Run")
-    # print("sleeping... waiting for ip file to register?")
-    # time.sleep(10)
-    # jobs_SendAndRun = []
-    # for i in range(vm_count):
-    #     print("Transferring data to machine: " + str(i + 1))
-    #     p_sendAndRun = multiprocessing.Process(target=sendFilesToAzureAndLaunch,
-    #                                 args=(Rad_Files_For_Transfer,
-    #                                       Azure_Main_Directory,
-    #                                       Local_Main_Directory,
-    #                                       vm_IP_List,
-    #                                       divideIntoMachineGroups,
-    #                                       i))
-    #     jobs_SendAndRun.append(p_sendAndRun)
-    #     p_sendAndRun.start()
-    # for job in jobs_SendAndRun:
-    #     job.join()
-    #
+    # Get a list of the zip files to send
+    zipFilesForRemoteTransfer = []
+    for item in os.listdir(Local_Main_Directory):
+        zipFilesForRemoteTransfer.append(os.path.join(Local_Main_Directory,item))
+
+    # print(len(vm_IP_List))
+    # print(len(zipFilesForRemoteTransfer))
+    print(len(vm_IP_List))
+
+    # Multithreaded(starmap) send zip files to remote machines
+    print('Running Starmapped "SendToAzureAndRun" Function')
+    p_sendRemote = multiprocessing.Pool(multiprocessing.cpu_count()-1)
+    starmap_tuple = []
+    for i in range(len(zipFilesForRemoteTransfer)):
+        starmap_tuple.append((Azure_Main_Directory,vm_IP_List[i],zipFilesForRemoteTransfer[i]))
+    result = p_sendRemote.starmap(sendFilesToAzureAndLaunch,starmap_tuple)
+    p_sendRemote.close()
+    p_sendRemote.join()
+    print("Files prepped for transfer")
     # sms_main.SimulationsComplete(login_main)
 
-    # # Multithreaded version of Collect HDR
-    # print("Running Multithreaded Collect HDR")
-    # jobs_CollectHDR = []
-    # for i in range(vm_count):
-    #     print("Collecting HDR files from machine: " + str(i + 1))
-    #     p_CollectHDR = multiprocessing.Process(target=collectHDRfiles,
-    #                                 args=(Azure_Main_Directory,
-    #                                       vm_IP_List,
-    #                                       i,
-    #                                       Local_HDR_Directory))
-    #     jobs_CollectHDR.append(p_CollectHDR)
-    #     p_CollectHDR.start()
-    #
-    #
-    # for job in jobs_CollectHDR:
-    #     job.join()
-    #
-    # sms_main.HDRsCopied(login_main)
-    # print("All Simulations complete\n")
-    # #
-    # #
-    # # for i in range(vm_count):
-    # #     collectHDRfiles(Azure_Main_Directory,vm_IP_List,i,Local_HDR_Directory)
-    # # print("HDR files copied back to local machine\n")
-    # #
+
+    ##### This is now moving to the "Launch DGP py file" -  things are now running remotely
+
+
+    ## The simulations are done, and we're moving back to local processing:
+    # Multithreaded version of Collect HDR
+    print("Running Multithreaded Collect HDR")
+    jobs_CollectHDR = []
+    for i in range(len(zipFilesForRemoteTransfer)):
+        print("Collecting HDR files from machine: " + str(i + 1))
+        p_CollectHDR = multiprocessing.Process(target=collectHDRfiles,
+                                    args=(Azure_Main_Directory,
+                                          vm_IP_List,
+                                          i,
+                                          Local_HDR_Directory))
+        jobs_CollectHDR.append(p_CollectHDR)
+        p_CollectHDR.start()
+
+
+    for job in jobs_CollectHDR:
+        job.join()
+
+    sms_main.HDRsCopied(login_main)
+    print("All Simulations complete\n")
+
+    print("HDR files copied back to local machine\n")
+
+    # last step! Unzip the HDR files and delete the zip containers
+    for root, dir, files in os.walk(Local_HDR_Directory):
+        for file in files:
+            if str(file).endswith('.zip'):
+                print('found a zip file')
+                destination_file_path = os.path.join(Local_HDR_Directory, file)
+                # Unzip the working files to the Main Directory
+                with zipfile.ZipFile(destination_file_path, 'r') as zip_ref:
+                    zip_ref.extractall(Local_HDR_Directory)
+                os.remove(destination_file_path)
+    print("ALL DONE!!!")
 
 
 

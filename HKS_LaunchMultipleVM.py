@@ -51,7 +51,7 @@ def generate_vm(Generate_VM,i):
         core.create_customvm(mgmt.network_client(login), mgmt.compute_client(login), i, login)
         log_message += "VM Created\n"
         print("VM " + str(i) + " Created")
-        sms.CreateVM(i,login)
+        # sms.CreateVM(i,login)
 
         # Connect to the machine and add the "man" Location from the usr folder
 

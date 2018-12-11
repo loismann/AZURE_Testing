@@ -3,6 +3,7 @@ import os
 import time
 from collections import defaultdict
 import shutil
+import zipfile
 
 ##### Functions
 
@@ -127,19 +128,32 @@ if __name__ == "__main__":
     Main_Directory = "/home/pferrer/new"
     # Make the directory fully R/W
     # os.chmod(Main_Directory,777)
+
+    # Unzip the working files
+    for root, dir, files in os.walk(Main_Directory):
+        for file in files:
+            if str(file).endswith('.zip'):
+                print('found a zip file')
+                destination_file_path = os.path.join(Main_Directory, file)
+        # Unzip the working files to the Main Directory
+    with zipfile.ZipFile(destination_file_path, 'r') as zip_ref:
+        zip_ref.extractall(Main_Directory)
+
+    os.remove(destination_file_path)
+    print("launched 'HKS_LaunchDGP' file remotely and unzipped files")
+
+
+
     FIND_BatchFileTypes(Main_Directory)
     # Find the different inputs for running the batch files
-    for root, dirs, files in os.walk(os.path.abspath(Main_Directory)):
-        for folder in dirs:
-            current_folder = os.path.join(Main_Directory,folder)
-            os.chdir(current_folder)
+    print("Running Sims Remotely...")
+    for root, dirs, files in os.walk(Main_Directory):
+        if 'imageBasedSimulation' in root:
+            os.chdir(root)
             # print(os.getcwd())
-            params = FIND_BatchFileTypes(current_folder)
-            # print(params)
-            # print()
+            params = FIND_BatchFileTypes(root)
             # Deep Breath.... Run all the batch files
             RUN_BatchFiles(params.get('initBatchFileName'),params.get('supportingBatchFiles'), params.get('pcompBatchFile'))
-
     # # Collect the results of the sims
     collectedHDRdirectory = Main_Directory + "/" + "CollectedHDRfiles"
 
