@@ -30,8 +30,7 @@ def generate_vm(Generate_VM,i):
         core.create_resource_group(mgmt.resource_group_client(login),login)
         log_message += "\nCreated Resource Group\n\n"
 
-        # Create (or override) an empty file to hold the Local IP addresses when this is done
-        IP_File = open(os.path.join(os.getcwd(), 'HELPERS', 'Local_IP_Addresses.py'), 'a')
+
 
 
         log_message += "Creating Instance " + str(i) + " ...\n"
@@ -52,7 +51,6 @@ def generate_vm(Generate_VM,i):
         log_message += "VM Created\n"
         print("VM " + str(i) + " Created")
         # sms.CreateVM(i,login)
-
         # Connect to the machine and add the "man" Location from the usr folder
 
         # Disassociate the IP address from the VM
@@ -60,16 +58,6 @@ def generate_vm(Generate_VM,i):
         log_message += "Public IP address unlinked"
         log_message += "--------------------------------------------\n"
         print("Public IP address unlinked\n----------------------------------------\n")
-
-        time.sleep(15)
-
-
-        # Get the private IP address of the newly created VM
-        private_IP = core.getPrivateIpAddress(mgmt.network_client(login),i, login)
-        # Write out the local IP to a reference file
-
-        IP_File.write("VM_" + str(i) + "_Local_IP = " + private_IP + "\n")
-        IP_File.close()
 
     else:
         print("Just Testing Stuff: HKS_LaunchMultipleVM")
@@ -89,6 +77,24 @@ def main(VM_Count):
 
     for job in jobs:
         job.join()
+
+    print("Finished creating VM's - moving on to Collecting IP Addresses")
+
+
+    # After all the VM's have been made and are done, create (or override) an empty file to hold the Local IP addresses
+    # initialize login class
+    login = Login()
+    # Initialize Management Clients
+    mgmt = HELPERS.HELPER_Management_Clients.MGMT(login)
+    print("Collecting Local IP Addresses")
+    IP_File = open(os.path.join(os.getcwd(), 'HELPERS', 'Local_IP_Addresses.py'), 'a')
+    for i in range(VM_Count):
+        # Get the private IP address of the newly created VM
+        private_IP = core.getPrivateIpAddress(mgmt.network_client(login),i, login)
+        # Write out the local IP to a reference file
+        IP_File.write("VM_" + str(i) + "_Local_IP = " + private_IP + "\n")
+    IP_File.close()
+    print("Finished Collecting Local IP Addresses")
 
 
 

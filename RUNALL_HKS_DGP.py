@@ -19,7 +19,7 @@ Local_Repo_Directory = login.Local_Repo_Directory
 Local_HDR_Directory = login.Local_HDR_Directory
 
 # How Many Virtual Machines do you want?
-vm_count = 20
+vm_count = 100
 
 #Master ON/OFF switch
 Turn_On_All = True
@@ -31,7 +31,6 @@ if __name__ == "__main__":
 
     print("Starting Timer...")
     start_time = time.time()
-
 
     #Delete any existing VM's
     print("Looking for Existing Azure Resources...")

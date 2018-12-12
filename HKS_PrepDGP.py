@@ -401,17 +401,32 @@ def main(Local_Main_Directory,Local_HDR_Directory):
     # print(len(zipFilesForRemoteTransfer))
     print(len(vm_IP_List))
 
-    # Multithreaded(starmap) send zip files to remote machines
-    print('Running Starmapped "SendToAzureAndRun" Function')
-    p_sendRemote = multiprocessing.Pool(multiprocessing.cpu_count()-1)
-    starmap_tuple = []
-    for i in range(len(zipFilesForRemoteTransfer)):
-        starmap_tuple.append((Azure_Main_Directory,vm_IP_List[i],zipFilesForRemoteTransfer[i]))
-    result = p_sendRemote.starmap(sendFilesToAzureAndLaunch,starmap_tuple)
-    p_sendRemote.close()
-    p_sendRemote.join()
-    print("Files prepped for transfer")
-    # sms_main.SimulationsComplete(login_main)
+
+    # Multithreaded(processing) send zip to remote machines and run
+    jobs = []
+    print("now running 'processing' multithreading of send to azure and run...")
+    for i in range(len(vm_IP_List)):
+        p = multiprocessing.Process(target=sendFilesToAzureAndLaunch,
+                                    args=(Azure_Main_Directory,
+                                          vm_IP_List[i],
+                                          zipFilesForRemoteTransfer[i]))
+        jobs.append(p)
+        p.start()
+
+    for job in jobs:
+        job.join()
+
+    # # Multithreaded(starmap) send zip files to remote machines
+    # print('Running Starmapped "SendToAzureAndRun" Function')
+    # p_sendRemote = multiprocessing.Pool(multiprocessing.cpu_count()-1)
+    # starmap_tuple = []
+    # for i in range(len(zipFilesForRemoteTransfer)):
+    #     starmap_tuple.append((Azure_Main_Directory,vm_IP_List[i],zipFilesForRemoteTransfer[i]))
+    # result = p_sendRemote.starmap(sendFilesToAzureAndLaunch,starmap_tuple)
+    # p_sendRemote.close()
+    # p_sendRemote.join()
+    # print("Files prepped for transfer")
+    # # sms_main.SimulationsComplete(login_main)
 
 
     ##### This is now moving to the "Launch DGP py file" -  things are now running remotely
