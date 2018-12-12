@@ -14,6 +14,7 @@ from stat import S_ISDIR
 import HELPERS.HELPER_ResetTestFiles as reset
 import zipfile
 from pathlib import Path
+import random
 
 
 ###### Important Global Variables #########
@@ -209,7 +210,9 @@ def sendFilesToAzureAndLaunch(Azure_Main_Directory,
                               zipFilesForRemoteTransfer,
                               ):
 
-
+    sleepTime = random.randint(0,10)
+    print("randomly sleeping for " + str(sleepTime) + " seconds before beginning file transfer")
+    time.sleep(sleepTime)
 
     IP = vm_IP_List
     login = Login()
@@ -405,7 +408,7 @@ def main(Local_Main_Directory,Local_HDR_Directory):
     # Multithreaded(processing) send zip to remote machines and run
     jobs = []
     print("now running 'processing' multithreading of send to azure and run...")
-    for i in range(len(vm_IP_List)):
+    for i in range(len(zipFilesForRemoteTransfer)):
         p = multiprocessing.Process(target=sendFilesToAzureAndLaunch,
                                     args=(Azure_Main_Directory,
                                           vm_IP_List[i],

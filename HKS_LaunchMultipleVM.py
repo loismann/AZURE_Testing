@@ -79,6 +79,7 @@ def main(VM_Count):
         job.join()
 
     print("Finished creating VM's - moving on to Collecting IP Addresses")
+    time.sleep(5)
 
 
     # After all the VM's have been made and are done, create (or override) an empty file to hold the Local IP addresses
@@ -93,6 +94,7 @@ def main(VM_Count):
         private_IP = core.getPrivateIpAddress(mgmt.network_client(login),i, login)
         # Write out the local IP to a reference file
         IP_File.write("VM_" + str(i) + "_Local_IP = " + private_IP + "\n")
+
     IP_File.close()
     print("Finished Collecting Local IP Addresses")
 
