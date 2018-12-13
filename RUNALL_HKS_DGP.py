@@ -19,7 +19,7 @@ Local_Repo_Directory = login.Local_Repo_Directory
 Local_HDR_Directory = login.Local_HDR_Directory
 
 # How Many Virtual Machines do you want?
-vm_count = 200
+vm_count = 2
 
 #Master ON/OFF switch
 Turn_On_All = True

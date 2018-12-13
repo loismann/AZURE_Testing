@@ -147,6 +147,7 @@ if __name__ == "__main__":
     FIND_BatchFileTypes(Main_Directory)
     # Find the different inputs for running the batch files
     print("Running Sims Remotely...")
+    counter = 1
     for root, dirs, files in os.walk(Main_Directory):
         if 'imageBasedSimulation' in root:
             os.chdir(root)
@@ -154,8 +155,11 @@ if __name__ == "__main__":
             params = FIND_BatchFileTypes(root)
             # Deep Breath.... Run all the batch files
             RUN_BatchFiles(params.get('initBatchFileName'),params.get('supportingBatchFiles'), params.get('pcompBatchFile'))
+            print("Sim " + str(counter) + " completed")
+            counter +=1
     # # Collect the results of the sims
     collectedHDRdirectory = Main_Directory + "/" + "CollectedHDRfiles"
+    print"\nAll simulations completed on machine"
 
     # Maybe add something here to delete a previously existing copy of the directory
     # This would prevent me having to manually delete the existing directory before running a new test
