@@ -53,7 +53,7 @@ def generate_vm(Generate_VM,i):
         # sms.CreateVM(i,login)
         # Connect to the machine and add the "man" Location from the usr folder
 
-        # Disassociate the IP address from the VM
+        # Disassociate the public access IP address from the VM
         core.disassociate_public_ip_address(mgmt.network_client(login), i, login)
         log_message += "Public IP address unlinked"
         log_message += "--------------------------------------------\n"
@@ -87,7 +87,7 @@ def main(VM_Count):
     login = Login()
     # Initialize Management Clients
     mgmt = HELPERS.HELPER_Management_Clients.MGMT(login)
-    print("Collecting Local IP Addresses")
+    print("Generating and Inserting Local IP Addresses")
     IP_File = open(os.path.join(os.getcwd(), 'HELPERS', 'Local_IP_Addresses.py'), 'a')
     for i in range(VM_Count):
         # Get the private IP address of the newly created VM
