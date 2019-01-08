@@ -88,7 +88,7 @@ def main(VM_Count):
     # Initialize Management Clients
     mgmt = HELPERS.HELPER_Management_Clients.MGMT(login)
     print("Generating and Inserting Local IP Addresses")
-    IP_File = open(os.path.join(os.getcwd(), 'HELPERS', 'Local_IP_Addresses.py'), 'a')
+    IP_File = open(os.path.join(os.getcwd(), 'Local_IP_Addresses.py'), 'a')
     for i in range(VM_Count):
         # Get the private IP address of the newly created VM
         private_IP = core.getPrivateIpAddress(mgmt.network_client(login),i, login)

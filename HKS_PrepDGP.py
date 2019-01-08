@@ -327,6 +327,7 @@ def main(Local_Main_Directory,Local_HDR_Directory):
     # ALL MULTITHREADING LOGIC TAKES PLACE HERE.  EACH OF THE FUNCTIONS REPRESENTS OPERATION ON A SINGLE ELEMENT
 
 
+    # This location is fixed and should not change for any cloud based sims using the LINE image template
     Azure_Main_Directory = "/home/pferrer/new"
 
 
@@ -477,8 +478,8 @@ def main(Local_Main_Directory,Local_HDR_Directory):
 # Local_Repo_Directory = r"C:\Users\pferrer\PycharmProjects\AZURE_Testing"
 # Local_HDR_Directory = r"C:\Users\pferrer\Desktop\TEST_CopiedHDRfiles"
 # Local_Main_Directory = "/Users/paulferrer/Desktop/DGP_TestFiles"
-if __name__ == "__main__":
-    main(Local_Main_Directory,Local_HDR_Directory)
+# if __name__ == "__main__":
+#     main(Local_Main_Directory,Local_HDR_Directory)
 #
 # # radFilesForTransfer(Local_Main_Directory)
 # dict = getParallelDictionaryForFilePrep(Local_Main_Directory)
