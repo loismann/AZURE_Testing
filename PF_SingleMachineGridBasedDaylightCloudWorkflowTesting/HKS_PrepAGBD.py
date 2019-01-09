@@ -17,6 +17,9 @@ from pathlib import Path
 import random
 
 
+###### Important Global Variables #########
+HKS_LaunchAGBD = r'HKS_LaunchAGBD.py'
+
 ##########################################  DEFINE THE HELPER FUNCTIONs  ###############################################
 
 # This will get the number of VM's in use from the local copy of the IP Address file
@@ -82,15 +85,14 @@ def zipFiles(Local_Main_Directory_AGBD,filesForRemoteTransfer):
     return os.path.abspath(zipped_file)
 
 # This performs all operations to get the files over to azure and then run them
-# THIS WAS COPIED FROM THE DGP ANALYSIS FILES.  REMOVE THIS MESSAGE WHEN PROPERLY MODIFIED TO RUN ANNUAL GRID BASED DAYLIGHT CALCS
 def sendFilesToAzureAndLaunch(Azure_Main_Directory,
                               vm_IP_List,
                               zipFilesForRemoteTransfer,
                               ):
 
-    sleepTime = random.randint(0,2)
-    print("randomly sleeping for " + str(sleepTime) + " seconds before beginning file transfer")
-    time.sleep(sleepTime)
+    # sleepTime = random.randint(0,2)
+    # print("randomly sleeping for " + str(sleepTime) + " seconds before beginning file transfer")
+    # time.sleep(sleepTime)
     #
     IP = vm_IP_List
     login = Login()
@@ -109,19 +111,19 @@ def sendFilesToAzureAndLaunch(Azure_Main_Directory,
     original_file_path = zipFilesForRemoteTransfer
     destination_file_path = Azure_Main_Directory + r"/" + os.path.split(original_file_path)[1]
     ssh.copyfilesSCP(IP, 22, login.ADMIN_NAME, login.ADMIN_PSWD, original_file_path, destination_file_path)
-    #
-    #
-    # # Copy the "HKS_LaunchDGP.py" file to the remote system
-    # original_file_path = os.path.join(login.Local_Repo_Directory,HKS_LaunchDGP)
-    # destination_file_path = Azure_Main_Directory + "/" + HKS_LaunchDGP
-    # ssh.copyfilesSCP(IP, 22, login.ADMIN_NAME, login.ADMIN_PSWD, original_file_path, destination_file_path)
-    # print(destination_file_path + " Copied to Azure")
-    #
-    #
-    # # LAUNCH SIMULATIONS
-    # ssh.sendCommand("python " + destination_file_path)
-    # print("Simulations launched on Machine")
-    # # sms_instance.SimulationsStarted(i, login)
+
+
+    # Copy the "HKS_LaunchDGP.py" file to the remote system
+    original_file_path = os.path.join(login.Local_Repo_Directory,HKS_LaunchAGBD)
+    destination_file_path = Azure_Main_Directory + "/" + HKS_LaunchAGBD
+    ssh.copyfilesSCP(IP, 22, login.ADMIN_NAME, login.ADMIN_PSWD, original_file_path, destination_file_path)
+    print(destination_file_path + " Copied to Azure")
+
+
+    # LAUNCH SIMULATIONS
+    ssh.sendCommand("python " + destination_file_path)
+    print("Simulations launched on Machine")
+    # sms_instance.SimulationsStarted(i, login)
 
 
 
@@ -144,4 +146,11 @@ def main(Local_Main_Directory_AGBD):
     login_main = Login()
 
     # send all files to azure
+    # this is single threaded for now but will be multithreaded eventually
     sendFilesToAzureAndLaunch(Azure_Main_Directory, vm_IP_List[0], zippedfile)
+
+    # copy over the "Launch AGBD" python file
+
+    # excecute the python file to run the simulations
+
+    # copy the results back to the local machine
