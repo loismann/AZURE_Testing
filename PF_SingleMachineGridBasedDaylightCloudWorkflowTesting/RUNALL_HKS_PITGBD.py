@@ -1,7 +1,7 @@
 import HKS_DeleteAzureResources as delete
 import HKS_LaunchMultipleVM as launch_vm
 from HELPERS.HELPER_Login_Info import Login
-import PF_SingleMachineGridBasedDaylightCloudWorkflowTesting.HKS_PrepAGBD as launch_sims
+import PF_SingleMachineGridBasedDaylightCloudWorkflowTesting.HKS_PrepPITGBD as launch_sims
 # import HKS_PrepDGP as launch_sims
 import time
 

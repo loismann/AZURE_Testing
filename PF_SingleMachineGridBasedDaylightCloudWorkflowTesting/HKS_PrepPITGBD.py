@@ -18,7 +18,7 @@ import random
 
 
 ###### Important Global Variables #########
-HKS_LaunchAGBD = r'HKS_LaunchAGBD.py'
+HKS_LaunchAGBD = r'HKS_LaunchPITGBD.py'
 
 ##########################################  DEFINE THE HELPER FUNCTIONs  ###############################################
 
@@ -63,7 +63,7 @@ def getFilesForTransfer(Local_Main_Directory_AGBD):
         for file in files:
             file_path = os.path.join(root, file)
 
-            if file_path.endswith(".rad") or file_path.endswith(".pts"):
+            if file_path.endswith(".rad") or file_path.endswith(".pts") or file_path.endswith(".sky"):
                 Files_For_Transfer.append(file_path)
 
     return Files_For_Transfer
